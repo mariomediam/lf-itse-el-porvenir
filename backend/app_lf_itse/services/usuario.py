@@ -197,6 +197,12 @@ def construir_menu_usuario(usuario_id: int) -> list[dict]:
                     'submenues': [],
                 },
                 {
+                    'id': 'catalogos-inspectores',
+                    'label': 'Inspectores',
+                    'url': '/catalogos/inspectores',
+                    'submenues': [],
+                },
+                {
                     'id': 'catalogos-zonificaciones',
                     'label': 'Zonificaciones',
                     'url': '/catalogos/zonificaciones',
