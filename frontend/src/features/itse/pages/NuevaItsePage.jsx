@@ -7,6 +7,8 @@ import SelectorPersona from '@features/expedientes/components/SelectorPersona'
 import AgregarGiroModal from '@features/licencias/components/AgregarGiroModal'
 import { dashboardApi } from '@api/dashboardApi'
 import { itseApi } from '@api/itseApi'
+import { licenciasApi } from '@api/licenciasApi'
+import { personasApi } from '@api/personasApi'
 import useItseStore from '@store/itseStore'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -75,6 +77,14 @@ const IconoTexto = (
   </svg>
 )
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const buildPersonaOption = (persona) => ({
+  value: persona.id,
+  label: persona.persona_nombre,
+  data:  persona,
+})
+
 // ── Página ────────────────────────────────────────────────────────────────────
 
 export default function NuevaItsePage() {
@@ -126,6 +136,9 @@ export default function NuevaItsePage() {
   // Submit
   const [submitting, setSubmitting] = useState(false)
 
+  // Precarga desde licencia de funcionamiento
+  const [loadingLf, setLoadingLf] = useState(false)
+
   // ── Carga inicial ────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -141,6 +154,56 @@ export default function NuevaItsePage() {
       .catch(() => toast.error('Error al cargar los niveles de riesgo'))
       .finally(() => setLoadingCatalogos(false))
   }, [])
+
+  // ── Precarga desde licencia de funcionamiento existente ──────────────────────
+
+  useEffect(() => {
+    if (!expedienteId) return
+
+    let active = true
+    setLoadingLf(true)
+
+    licenciasApi.buscar('EXPEDIENTE_ID', expedienteId)
+      .then(async (res) => {
+        if (!active) return
+        if (!res.data || res.data.length === 0) return
+
+        const lf = res.data[0]
+
+        setNivelRiesgoId(String(lf.nivel_riesgo_id))
+        setNumeroReciboPago(lf.numero_recibo_pago ?? '')
+        setNombreComercial(lf.nombre_comercial ?? '')
+        setDireccion(lf.direccion ?? '')
+        setArea(lf.area != null ? String(lf.area) : '')
+
+        const [resTitular, resRep, resGiros] = await Promise.all([
+          personasApi.buscar('ID', lf.titular_id),
+          lf.conductor_id
+            ? personasApi.buscar('ID', lf.conductor_id)
+            : Promise.resolve(null),
+          licenciasApi.getGiros(lf.id),
+        ])
+
+        if (!active) return
+
+        if (resTitular.data[0]) setTitular(buildPersonaOption(resTitular.data[0]))
+        if (resRep?.data[0])    setRepresentante(buildPersonaOption(resRep.data[0]))
+
+        if (resGiros.data.length > 0) {
+          setGiros(resGiros.data.map((g) => ({
+            id:      g.giro_id,
+            ciiu_id: g.ciiu_id,
+            nombre:  g.nombre,
+          })))
+        }
+
+        toast.info('Se precargaron datos de la licencia de funcionamiento existente para este expediente')
+      })
+      .catch(() => {})
+      .finally(() => { if (active) setLoadingLf(false) })
+
+    return () => { active = false }
+  }, [expedienteId])
 
   // ── Giros ────────────────────────────────────────────────────────────────────
 
