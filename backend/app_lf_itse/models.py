@@ -618,6 +618,52 @@ class ItseGiro(models.Model):
         db_table = 'itse_giros'
 
 
+class Inspector(models.Model):
+    apellido_paterno = models.CharField(max_length=50)
+    apellido_materno = models.CharField(max_length=50)
+    nombres          = models.CharField(max_length=50)
+    usuario          = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        db_column='usuario_id',
+        related_name='inspectores_digitados',
+    )
+    fecha_creacion       = models.DateTimeField()
+    fecha_actualizacion  = models.DateTimeField()
+
+    class Meta:
+        db_table = 'inspectores'
+
+    def __str__(self):
+        return f'{self.apellido_paterno} {self.apellido_materno}, {self.nombres}'
+
+
+class ItseInspector(models.Model):
+    itse = models.ForeignKey(
+        Itse,
+        on_delete=models.CASCADE,
+        db_column='itse_id',
+        related_name='inspectores',
+    )
+    inspector = models.ForeignKey(
+        Inspector,
+        on_delete=models.PROTECT,
+        db_column='inspector_id',
+        related_name='itse_asignadas',
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        db_column='usuario_id',
+        related_name='itse_inspectores_digitados',
+    )
+    fecha_creacion      = models.DateTimeField()
+    fecha_actualizacion = models.DateTimeField()
+
+    class Meta:
+        db_table = 'itse_inspectores'
+
+
 class UsuarioPerfil(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
