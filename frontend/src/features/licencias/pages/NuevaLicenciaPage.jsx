@@ -7,6 +7,8 @@ import SelectorPersona from '@features/expedientes/components/SelectorPersona'
 import AgregarGiroModal from '../components/AgregarGiroModal'
 import { dashboardApi } from '@api/dashboardApi'
 import { licenciasApi } from '@api/licenciasApi'
+import { itseApi } from '@api/itseApi'
+import { personasApi } from '@api/personasApi'
 import useLicenciasStore from '@store/licenciasStore'
 
 // ── Clases reutilizables ───────────────────────────────────────────────────────
@@ -68,6 +70,14 @@ const IconoTexto = (
   </svg>
 )
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const buildPersonaOption = (persona) => ({
+  value: persona.id,
+  label: persona.persona_nombre,
+  data:  persona,
+})
+
 // ── Página ────────────────────────────────────────────────────────────────────
 
 export default function NuevaLicenciaPage() {
@@ -127,6 +137,9 @@ export default function NuevaLicenciaPage() {
   // Submit
   const [submitting, setSubmitting] = useState(false)
 
+  // Precarga desde ITSE
+  const [loadingItse, setLoadingItse] = useState(false)
+
   // ── Carga inicial ────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -150,6 +163,49 @@ export default function NuevaLicenciaPage() {
       .catch(() => toast.error('Error al cargar los catálogos'))
       .finally(() => setLoadingCatalogos(false))
   }, [])
+
+  // ── Precarga desde ITSE existente ────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!expedienteId) return
+
+    setLoadingItse(true)
+    itseApi.buscar('EXPEDIENTE_ID', expedienteId)
+      .then(async (res) => {
+        if (!res.data || res.data.length === 0) return
+
+        const itse = res.data[0]
+
+        setNivelRiesgoId(String(itse.nivel_riesgo_id))
+        setNumeroReciboPago(itse.numero_recibo_pago ?? '')
+        setNombreComercial(itse.nombre_comercial ?? '')
+        setDireccion(itse.direccion ?? '')
+        setArea(itse.area != null ? String(itse.area) : '')
+
+        const [resTitular, resRep, resGiros] = await Promise.all([
+          personasApi.buscar('ID', itse.titular_id),
+          itse.conductor_id
+            ? personasApi.buscar('ID', itse.conductor_id)
+            : Promise.resolve(null),
+          itseApi.getGiros(itse.id),
+        ])
+
+        if (resTitular.data[0]) setTitular(buildPersonaOption(resTitular.data[0]))
+        if (resRep?.data[0])    setRepresentante(buildPersonaOption(resRep.data[0]))
+
+        if (resGiros.data.length > 0) {
+          setGiros(resGiros.data.map((g) => ({
+            id:      g.giro_id,
+            ciiu_id: g.ciiu_id,
+            nombre:  g.nombre,
+          })))
+        }
+
+        toast.info('Se precargaron datos de la ITSE existente para este expediente')
+      })
+      .catch(() => {})
+      .finally(() => setLoadingItse(false))
+  }, [expedienteId])
 
   // ── Giros ────────────────────────────────────────────────────────────────────
 
