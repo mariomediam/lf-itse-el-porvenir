@@ -5,6 +5,7 @@ import TopBar from '@components/layout/TopBar'
 import SideMenu from '@components/layout/SideMenu'
 import SelectorPersona from '@features/expedientes/components/SelectorPersona'
 import AgregarGiroModal from '@features/licencias/components/AgregarGiroModal'
+import SelectorItsePrincipal from '@features/itse/components/SelectorItsePrincipal'
 import { dashboardApi } from '@api/dashboardApi'
 import { inspectoresApi } from '@api/inspectoresApi'
 import { itseApi } from '@api/itseApi'
@@ -141,6 +142,11 @@ export default function ModificarItsePage() {
   // Observaciones
   const [observaciones, setObservaciones] = useState('')
 
+  // ITSE principal (solo cuando tipo = renovación)
+  const [itsePrincipalOption,   setItsePrincipalOption]   = useState(null)
+  const [confirmarAutocomplete, setConfirmarAutocomplete] = useState(false)
+  const [autocompletando,       setAutocompletando]       = useState(false)
+
   // Submit
   const [submitting, setSubmitting] = useState(false)
 
@@ -224,6 +230,26 @@ export default function ModificarItsePage() {
           setInspectorId(String(resInspectoresItse.data[0].inspector_id))
         }
 
+        // ITSE principal (renovación)
+        if (itse.itse_principal_id) {
+          try {
+            const resPrincipal = await itseApi.buscar('ID', itse.itse_principal_id)
+            const principal = resPrincipal.data[0]
+            if (principal) {
+              const formatFecha = (f) => {
+                if (!f) return '-'
+                const d = new Date(f)
+                return `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`
+              }
+              setItsePrincipalOption({
+                value: principal.id,
+                label: `N° ${principal.numero_itse}  |  ${formatFecha(principal.fecha_expedicion)}  |  ${principal.nombre_comercial}`,
+                data: principal,
+              })
+            }
+          } catch { /* ignorar si no se puede cargar */ }
+        }
+
         // Titular
         const resTitular = await personasApi.buscar('ID', itse.titular_id)
         if (resTitular.data[0]) setTitular(buildPersonaOption(resTitular.data[0]))
@@ -254,6 +280,51 @@ export default function ModificarItsePage() {
     setGiros((prev) => prev.filter((g) => g.id !== giroId))
   }
 
+  // ── ITSE principal: cambio y autocompletado ──────────────────────────────────
+
+  const handleItsePrincipalChange = (option) => {
+    setItsePrincipalOption(option)
+    setConfirmarAutocomplete(!!option)
+  }
+
+  const handleAceptarAutocomplete = async () => {
+    setConfirmarAutocomplete(false)
+    setAutocompletando(true)
+    const d = itsePrincipalOption.data
+    try {
+      const resGiros = await itseApi.getGiros(d.id)
+      setNivelRiesgoId(String(d.nivel_riesgo_id))
+      setNombreComercial(d.nombre_comercial ?? '')
+      setDireccion(d.direccion ?? '')
+      setCapacidadAforo(d.capacidad_aforo != null ? String(d.capacidad_aforo) : '')
+      setArea(d.area != null ? String(d.area) : '')
+      setTitular({
+        value: d.titular_id,
+        label: d.titular_nombre,
+        data:  { id: d.titular_id, persona_nombre: d.titular_nombre },
+      })
+      setRepresentante({
+        value: d.conductor_id,
+        label: d.conductor_nombre,
+        data:  { id: d.conductor_id, persona_nombre: d.conductor_nombre },
+      })
+      setGiros(resGiros.data.map((g) => ({
+        id:      g.giro_id,
+        ciiu_id: g.ciiu_id,
+        nombre:  g.nombre,
+      })))
+      toast.success('Formulario autocompletado con los datos de la ITSE anterior')
+    } catch {
+      toast.error('No se pudieron cargar los datos de la ITSE anterior')
+    } finally {
+      setAutocompletando(false)
+    }
+  }
+
+  const handleRechazarAutocomplete = () => {
+    setConfirmarAutocomplete(false)
+  }
+
   // ── Envío del formulario ─────────────────────────────────────────────────────
 
   const handleSubmit = async (e) => {
@@ -266,7 +337,6 @@ export default function ModificarItsePage() {
     if (!tipoItseId)               { toast.error('Seleccione el tipo de ITSE');                  return }
     if (!resolucionNumero)         { toast.error('Ingrese el número de resolución');             return }
     if (!nivelRiesgoId)            { toast.error('Seleccione el nivel de riesgo');               return }
-    if (!numeroReciboPago)         { toast.error('Ingrese el número de recibo de pago');         return }
     if (!titular)                  { toast.error('Seleccione el titular de la ITSE');            return }
     if (!representante)            { toast.error('Seleccione el representante legal');           return }
     if (!nombreComercial)          { toast.error('Ingrese el nombre comercial');                 return }
@@ -274,7 +344,6 @@ export default function ModificarItsePage() {
     if (!capacidadAforo)           { toast.error('Ingrese la capacidad de aforo');               return }
     if (!area)                     { toast.error('Ingrese el área del establecimiento');         return }
     if (giros.length === 0)        { toast.error('Agregue al menos un giro autorizado');         return }
-
     const payload = {
       expediente_id:              expedienteId,
       tipo_itse_id:               Number(tipoItseId),
@@ -284,7 +353,7 @@ export default function ModificarItsePage() {
       fecha_caducidad:            fechaCaducidad,
       titular_id:                 titular.data.id,
       conductor_id:               representante.data.id,
-      itse_principal_id:          null,
+      itse_principal_id:          Number(tipoItseId) === 2 ? (itsePrincipalOption?.value ?? null) : null,
       nombre_comercial:           nombreComercial.trim(),
       nivel_riesgo_id:            Number(nivelRiesgoId),
       direccion:                  direccion.trim(),
@@ -436,7 +505,10 @@ export default function ModificarItsePage() {
                     </label>
                     <select
                       value={tipoItseId}
-                      onChange={(e) => setTipoItseId(e.target.value)}
+                      onChange={(e) => {
+                        setTipoItseId(e.target.value)
+                        setItsePrincipalOption(null)
+                      }}
                       className={selectClass}
                     >
                       <option value="">Seleccione un tipo</option>
@@ -458,6 +530,43 @@ export default function ModificarItsePage() {
                     />
                   </div>
                 </div>
+
+                {/* ITSE a renovar (solo visible cuando tipo = Renovación) */}
+                {Number(tipoItseId) === 2 && (
+                  <div className="space-y-2">
+                    <SelectorItsePrincipal
+                      value={itsePrincipalOption}
+                      onChange={handleItsePrincipalChange}
+                      required={false}
+                    />
+                    {confirmarAutocomplete && (
+                      <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                        <svg className="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="flex-1 text-blue-800">
+                          ¿Desea autocompletar el formulario con los datos de la ITSE seleccionada?
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleAceptarAutocomplete}
+                          disabled={autocompletando}
+                          className="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                        >
+                          {autocompletando ? 'Cargando...' : 'Sí, autocompletar'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRechazarAutocomplete}
+                          className="px-3 py-1 bg-white border border-gray-300 text-gray-600 text-xs font-medium rounded-md hover:bg-gray-50 transition-colors"
+                        >
+                          No
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Fila 3: Nivel de riesgo, Recibo de pago */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -481,13 +590,13 @@ export default function ModificarItsePage() {
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                      N° de recibo de pago <span className="text-danger">*</span>
+                      N° de recibo de pago
                     </label>
                     <input
                       type="text"
                       value={numeroReciboPago}
                       onChange={(e) => setNumeroReciboPago(e.target.value)}
-                      placeholder="Ej. 00647587"
+                      placeholder="Ej. 00647587 (opcional)"
                       className={inputClass}
                     />
                   </div>

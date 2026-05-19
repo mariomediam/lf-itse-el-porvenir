@@ -20,6 +20,7 @@ import ItseImprimirPage from '@features/itse/pages/ItseImprimirPage'
 import ReporteLicenciasPage from '@features/reportes/pages/ReporteLicenciasPage'
 import ReporteItsePage from '@features/reportes/pages/ReporteItsePage'
 import ReporteExpedientesPage from '@features/reportes/pages/ReporteExpedientesPage'
+import ReporteItsePorRenovarPage from '@features/reportes/pages/ReporteItsePorRenovarPage'
 import PersonasPage from '@features/personas/pages/PersonasPage'
 import GirosPage from '@features/giros/pages/GirosPage'
 import InspectoresPage from '@features/inspectores/pages/InspectoresPage'
@@ -228,6 +229,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ReporteExpedientesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reportes/certificados-itse/por-renovar"
+          element={
+            <ProtectedRoute>
+              <ReporteItsePorRenovarPage />
             </ProtectedRoute>
           }
         />

@@ -46,6 +46,7 @@ from .serializers import (
     LicenciaFuncionamientoUpdateSerializer,
     ExpedienteConsultaQuerySerializer,
     ItseConsultaQuerySerializer,
+    ItsePorRenovarQuerySerializer,
     LicenciasFuncionamientoConsultaQuerySerializer,
     LicenciasFuncionamientoReporteQuerySerializer,
     NivelRiesgoSerializer,
@@ -87,6 +88,7 @@ from .services.itse import (
     ItseNotificacionFechaInvalidaError,
     buscar_itse,
     consultar_itse,
+    itse_por_renovar,
     crear_itse,
     eliminar_itse,
     listar_estados_itse,
@@ -253,6 +255,7 @@ class ExpedienteUpdateView(APIView):
             expediente = actualizar_expediente(
                 pk=pk,
                 data=serializer_in.validated_data,
+                usuario=request.user,
             )
 
             serializer_out = ExpedienteSerializer(expediente)
@@ -273,7 +276,7 @@ class ExpedienteUpdateView(APIView):
 
     def delete(self, request, pk):
         try:
-            eliminar_expediente(pk=pk)
+            eliminar_expediente(pk=pk, usuario=request.user)
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         except ExpedienteConLicenciaError as e:
@@ -294,6 +297,28 @@ class ExpedienteUpdateView(APIView):
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class FechaServidorView(APIView):
+    """
+    GET /api/lf-itse/fecha-servidor/
+
+    Retorna la fecha actual del servidor en formato ISO (YYYY-MM-DD).
+    Utilizado por el frontend para calcular rangos de fechas relativas
+    sin depender del reloj del cliente.
+
+    Respuesta
+    ---------
+    { "fecha": "2026-05-11" }
+
+    Requiere autenticación JWT.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        import datetime
+        return Response({'fecha': datetime.date.today().isoformat()}, status=status.HTTP_200_OK)
 
 
 class ExpedientesPendientesView(APIView):
@@ -556,7 +581,7 @@ class TipoProcedimientoTupaDetailView(APIView):
             if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            tipo = actualizar_tipo_procedimiento_tupa(pk, serializer.validated_data)
+            tipo = actualizar_tipo_procedimiento_tupa(pk, serializer.validated_data, request.user)
             return Response(
                 TipoProcedimientoTupaSerializer(tipo).data,
                 status=status.HTTP_200_OK,
@@ -571,7 +596,7 @@ class TipoProcedimientoTupaDetailView(APIView):
 
     def delete(self, request, pk):
         try:
-            eliminar_tipo_procedimiento_tupa(pk)
+            eliminar_tipo_procedimiento_tupa(pk, request.user)
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         except ProtectedError:
@@ -686,7 +711,7 @@ class PersonaDetailView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            persona = actualizar_persona(pk, serializer.validated_data)
+            persona = actualizar_persona(pk, serializer.validated_data, request.user)
             return Response(
                 PersonaSerializer(persona).data,
                 status=status.HTTP_200_OK,
@@ -707,7 +732,7 @@ class PersonaDetailView(APIView):
 
     def delete(self, request, pk):
         try:
-            eliminar_persona(pk)
+            eliminar_persona(pk, request.user)
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         except Exception as e:
@@ -1664,7 +1689,7 @@ class UsuarioDetailView(APIView):
             if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            usuario = actualizar_usuario(pk, serializer.validated_data)
+            usuario = actualizar_usuario(pk, serializer.validated_data, request.user)
             return Response(
                 UsuarioSerializer(usuario).data,
                 status=status.HTTP_200_OK,
@@ -1679,7 +1704,7 @@ class UsuarioDetailView(APIView):
 
     def delete(self, request, pk):
         try:
-            eliminar_usuario(pk)
+            eliminar_usuario(pk, request.user)
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         except UsuarioTieneRegistrosError as e:
@@ -2007,7 +2032,7 @@ class ItseUpdateView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            itse = modificar_itse(pk, serializer.validated_data)
+            itse = modificar_itse(pk, serializer.validated_data, request.user)
             return Response(
                 {'id': itse.id, 'mensaje': 'ITSE modificada correctamente.'},
                 status=status.HTTP_200_OK,
@@ -2052,7 +2077,7 @@ class ItseUpdateView(APIView):
         Requiere autenticación JWT.
         """
         try:
-            eliminar_itse(pk)
+            eliminar_itse(pk, request.user)
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         except ItseTieneDependientesError as e:
@@ -2108,6 +2133,7 @@ class ItseNotificacionView(APIView):
             registrar_notificacion_itse(
                 pk,
                 serializer.validated_data['fecha_notificacion'],
+                request.user,
             )
             return Response(
                 {'mensaje': 'Fecha de notificación registrada correctamente.'},
@@ -2189,22 +2215,29 @@ class ItseConsultaView(APIView):
     GET /api/lf-itse/itse/consulta/
 
     Busca ITSE según uno o más filtros opcionales.
-    Al menos uno debe estar presente.
+    Si no se pasa ningún filtro, retorna todos los registros.
 
-    Query params (todos opcionales, pero se requiere al menos uno)
-    --------------------------------------------------------------
-    titular_nombre             – str   búsqueda parcial en nombre/razón social del titular
-    numero_itse                – int   número de ITSE (exacto)
-    anio_itse                  – int   año de expedición del ITSE (exacto)
-    titular_numero_documento   – str   número de documento del titular (exacto)
-    conductor_numero_documento – str   número de documento del conductor (exacto)
+    Query params (todos opcionales)
+    --------------------------------
+    numero_itse                  – int   número de ITSE (exacto)
+    numero_expediente            – int   número de expediente (exacto)
+    anio_expediente              – int   año de recepción del expediente (exacto)
+    emision_desde                – date  inicio del rango de fecha de expedición (YYYY-MM-DD)
+    emision_hasta                – date  fin del rango de fecha de expedición (YYYY-MM-DD)
+    titular_nombre               – str   búsqueda parcial en apellidos + nombres del titular
+    titular_numero_documento     – str   número de documento exacto del titular
+    conductor_nombre             – str   búsqueda parcial en apellidos + nombres del conductor
+    conductor_numero_documento   – str   número de documento exacto del conductor
+    nombre_comercial             – str   búsqueda parcial en nombre comercial
+    nivel_riesgo_id              – int   ID del nivel de riesgo
+    direccion                    – str   búsqueda parcial en dirección
+    numero_recibo_pago           – str   número de recibo de pago (exacto)
+    fecha_notificacion_desde     – date  inicio del rango de fecha de notificación (YYYY-MM-DD)
+    fecha_notificacion_hasta     – date  fin del rango de fecha de notificación (YYYY-MM-DD)
+    esta_activo                  – bool  true = solo activas, false = solo inactivas
+    giro_nombre                  – str   búsqueda parcial en nombre de giro
 
-    Respuesta por ITSE
-    ------------------
-    numero_itse, numero_expediente,
-    titular_nombre, titular_documentos,
-    conductor_nombre, conductor_documentos,
-    nombre_comercial, direccion, giros, esta_activo.
+    Requiere autenticación JWT.
 
     Requiere autenticación JWT.
     """
@@ -2224,6 +2257,55 @@ class ItseConsultaView(APIView):
 
         except Exception as e:
             logger.exception('Error al consultar ITSE')
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class ItsePorRenovarView(APIView):
+    """
+    GET /api/lf-itse/itse/por-renovar/
+
+    Lista las ITSE que deben ser renovadas dentro de un periodo determinado.
+
+    Solo se incluyen ITSE que cumplan los tres criterios:
+    - No han sido renovadas aún (ninguna otra ITSE las referencia como itse_principal_id).
+    - Están activas (no tienen estados inactivos en su historial).
+    - Su fecha de caducidad cae dentro del rango [fecha_desde, fecha_hasta].
+
+    Query params (obligatorios)
+    ---------------------------
+    fecha_desde : date  — extremo inferior del rango (YYYY-MM-DD).
+    fecha_hasta : date  — extremo superior del rango (YYYY-MM-DD).
+
+    Respuesta por registro
+    ----------------------
+    id, numero_itse, fecha_expedicion, fecha_solicitud_renovacion,
+    fecha_caducidad, nombre_comercial, direccion.
+
+    Requiere autenticación JWT.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            serializer = ItsePorRenovarQuerySerializer(
+                data=request.query_params.dict()
+            )
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            data = serializer.validated_data
+            resultados = itse_por_renovar(
+                str(data['fecha_desde']),
+                str(data['fecha_hasta']),
+            )
+            return Response(resultados, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.exception('Error al listar ITSE por renovar')
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -2613,7 +2695,7 @@ class GiroDetailView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            giro = actualizar_giro(pk, serializer.validated_data)
+            giro = actualizar_giro(pk, serializer.validated_data, request.user)
             return Response(
                 GiroSerializer(giro).data,
                 status=status.HTTP_200_OK,
@@ -2628,7 +2710,7 @@ class GiroDetailView(APIView):
 
     def delete(self, request, pk):
         try:
-            eliminar_giro(pk)
+            eliminar_giro(pk, request.user)
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         except ProtectedError:
@@ -2893,7 +2975,7 @@ class LicenciaFuncionamientoUpdateView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            licencia = modificar_licencia(pk, serializer.validated_data)
+            licencia = modificar_licencia(pk, serializer.validated_data, request.user)
             return Response(
                 {'id': licencia.id, 'mensaje': 'Licencia modificada correctamente.'},
                 status=status.HTTP_200_OK,
@@ -2936,7 +3018,7 @@ class LicenciaFuncionamientoUpdateView(APIView):
         Requiere autenticación JWT.
         """
         try:
-            eliminar_licencia(pk)
+            eliminar_licencia(pk, request.user)
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         except LicenciaTieneDependientesError as e:
@@ -2992,6 +3074,7 @@ class LicenciaFuncionamientoNotificacionView(APIView):
             registrar_notificacion(
                 pk,
                 serializer.validated_data['fecha_notificacion'],
+                request.user,
             )
             return Response(
                 {'mensaje': 'Fecha de notificación registrada correctamente.'},
@@ -3163,22 +3246,28 @@ class LicenciasFuncionamientoConsultaView(APIView):
     GET /api/lf-itse/licencias-funcionamiento/consulta/
 
     Busca licencias de funcionamiento según uno o más filtros opcionales.
-    Al menos uno debe estar presente.
+    Si no se pasa ningún filtro, retorna todos los registros.
 
     Query params (todos opcionales, pero se requiere al menos uno)
     --------------------------------------------------------------
-    titular_nombre             – str   búsqueda parcial en nombre/razón social del titular
-    numero_licencia            – int   número de licencia (exacto)
-    anio_licencia              – int   año de emisión de la licencia (exacto)
-    titular_numero_documento   – str   número de documento del titular (exacto)
-    conductor_numero_documento – str   número de documento del conductor (exacto)
-
-    Respuesta por licencia
-    ----------------------
-    numero_licencia, numero_expediente,
-    titular_nombre, titular_documentos,
-    conductor_nombre, conductor_documentos,
-    nombre_comercial, direccion, giros, esta_activo.
+    numero_licencia              – int   número de licencia (exacto)
+    numero_expediente            – int   número de expediente (exacto)
+    anio_expediente              – int   año de recepción del expediente (exacto)
+    emision_desde                – date  inicio del rango de fecha de emisión (YYYY-MM-DD)
+    emision_hasta                – date  fin del rango de fecha de emisión (YYYY-MM-DD)
+    titular_nombre               – str   búsqueda parcial en apellidos + nombres del titular
+    titular_numero_documento     – str   número de documento exacto del titular
+    conductor_nombre             – str   búsqueda parcial en apellidos + nombres del conductor
+    conductor_numero_documento   – str   número de documento exacto del conductor
+    nombre_comercial             – str   búsqueda parcial en nombre comercial
+    nivel_riesgo_id              – int   ID del nivel de riesgo
+    direccion                    – str   búsqueda parcial en dirección
+    zonificacion_id              – int   ID de la zonificación
+    numero_recibo_pago           – str   número de recibo de pago (exacto)
+    fecha_notificacion_desde     – date  inicio del rango de fecha de notificación (YYYY-MM-DD)
+    fecha_notificacion_hasta     – date  fin del rango de fecha de notificación (YYYY-MM-DD)
+    esta_activo                  – bool  true = solo activas, false = solo inactivas
+    giro_nombre                  – str   búsqueda parcial en nombre de giro
 
     Requiere autenticación JWT.
     """

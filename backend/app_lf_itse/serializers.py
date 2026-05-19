@@ -492,7 +492,7 @@ class ItseCreateSerializer(serializers.Serializer):
 
     expediente_id = serializers.IntegerField(min_value=1)
     tipo_itse_id = serializers.IntegerField(min_value=1)
-    numero_itse = serializers.IntegerField(min_value=1)
+    numero_itse = serializers.IntegerField(required=False, allow_null=True, min_value=1)
     fecha_expedicion = serializers.DateField()
     fecha_solicitud_renovacion = serializers.DateField()
     fecha_caducidad = serializers.DateField()
@@ -504,7 +504,12 @@ class ItseCreateSerializer(serializers.Serializer):
     direccion = serializers.CharField(max_length=250)
     resolucion_numero = serializers.CharField(max_length=50)
     area = serializers.DecimalField(max_digits=18, decimal_places=2)
-    numero_recibo_pago = serializers.CharField(max_length=20)
+    numero_recibo_pago = serializers.CharField(
+        max_length=20,
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+    )
     observaciones = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -549,7 +554,7 @@ class LicenciaFuncionamientoCreateSerializer(serializers.Serializer):
 
     expediente_id            = serializers.IntegerField()
     tipo_licencia_id         = serializers.IntegerField()
-    numero_licencia          = serializers.IntegerField(min_value=1)
+    numero_licencia          = serializers.IntegerField(required=False, allow_null=True, min_value=1)
     fecha_emision            = serializers.DateField()
     titular_id               = serializers.IntegerField()
     conductor_id             = serializers.IntegerField()
@@ -566,7 +571,12 @@ class LicenciaFuncionamientoCreateSerializer(serializers.Serializer):
     resolucion_numero        = serializers.CharField(max_length=50)
     zonificacion_id          = serializers.IntegerField()
     area                     = serializers.DecimalField(max_digits=18, decimal_places=2)
-    numero_recibo_pago       = serializers.CharField(max_length=20)
+    numero_recibo_pago       = serializers.CharField(
+                                   max_length=20,
+                                   required=False,
+                                   allow_blank=True,
+                                   allow_null=True,
+                               )
     observaciones            = serializers.CharField(
                                    required=False,
                                    allow_blank=True,
@@ -626,7 +636,12 @@ class LicenciaFuncionamientoUpdateSerializer(serializers.Serializer):
     resolucion_numero        = serializers.CharField(max_length=50)
     zonificacion_id          = serializers.IntegerField()
     area                     = serializers.DecimalField(max_digits=18, decimal_places=2)
-    numero_recibo_pago       = serializers.CharField(max_length=20)
+    numero_recibo_pago       = serializers.CharField(
+                                   max_length=20,
+                                   required=False,
+                                   allow_blank=True,
+                                   allow_null=True,
+                               )
     observaciones            = serializers.CharField(
                                    required=False,
                                    allow_blank=True,
@@ -805,24 +820,33 @@ class LicenciasFuncionamientoConsultaQuerySerializer(serializers.Serializer):
     Al menos uno de los campos debe estar presente.
     """
 
-    titular_nombre             = serializers.CharField(required=False, max_length=200)
-    numero_licencia            = serializers.IntegerField(required=False, min_value=1)
-    anio_licencia              = serializers.IntegerField(required=False, min_value=1900)
-    titular_numero_documento   = serializers.CharField(required=False, max_length=20)
-    conductor_numero_documento = serializers.CharField(required=False, max_length=20)
+    numero_licencia              = serializers.IntegerField(required=False, min_value=1)
+    numero_expediente            = serializers.IntegerField(required=False, min_value=1)
+    anio_expediente              = serializers.IntegerField(required=False, min_value=1900)
+
+    emision_desde                = serializers.DateField(required=False)
+    emision_hasta                = serializers.DateField(required=False)
+
+    titular_nombre               = serializers.CharField(required=False, max_length=200)
+    titular_numero_documento     = serializers.CharField(required=False, max_length=20)
+
+    conductor_nombre             = serializers.CharField(required=False, max_length=200)
+    conductor_numero_documento   = serializers.CharField(required=False, max_length=20)
+
+    nombre_comercial             = serializers.CharField(required=False, max_length=200)
+
+    nivel_riesgo_id              = serializers.IntegerField(required=False, min_value=1)
+    direccion                    = serializers.CharField(required=False, max_length=300)
+    zonificacion_id              = serializers.IntegerField(required=False, min_value=1)
+    numero_recibo_pago           = serializers.CharField(required=False, max_length=50)
+
+    fecha_notificacion_desde     = serializers.DateField(required=False)
+    fecha_notificacion_hasta     = serializers.DateField(required=False)
+
+    esta_activo                  = serializers.BooleanField(required=False)
+    giro_nombre                  = serializers.CharField(required=False, max_length=200)
 
     def validate(self, attrs):
-        _FILTROS = [
-            'titular_nombre',
-            'numero_licencia',
-            'anio_licencia',
-            'titular_numero_documento',
-            'conductor_numero_documento',
-        ]
-        if not any(attrs.get(f) for f in _FILTROS):
-            raise serializers.ValidationError(
-                'Debe proporcionar al menos un filtro de búsqueda.'
-            )
         return attrs
 
 
@@ -858,26 +882,54 @@ class ItseConsultaQuerySerializer(serializers.Serializer):
     """
     Valida los parámetros de consulta del endpoint de búsqueda de ITSE.
 
-    Al menos uno de los campos debe estar presente.
+    Todos los campos son opcionales. Si no se pasa ninguno, retorna todos los registros.
     """
 
-    titular_nombre             = serializers.CharField(required=False, max_length=200)
-    numero_itse                = serializers.IntegerField(required=False, min_value=1)
-    anio_itse                  = serializers.IntegerField(required=False, min_value=1900)
-    titular_numero_documento   = serializers.CharField(required=False, max_length=20)
-    conductor_numero_documento = serializers.CharField(required=False, max_length=20)
+    numero_itse                  = serializers.IntegerField(required=False, min_value=1)
+    numero_expediente            = serializers.IntegerField(required=False, min_value=1)
+    anio_expediente              = serializers.IntegerField(required=False, min_value=1900)
+
+    emision_desde                = serializers.DateField(required=False)
+    emision_hasta                = serializers.DateField(required=False)
+
+    titular_nombre               = serializers.CharField(required=False, max_length=200)
+    titular_numero_documento     = serializers.CharField(required=False, max_length=20)
+
+    conductor_nombre             = serializers.CharField(required=False, max_length=200)
+    conductor_numero_documento   = serializers.CharField(required=False, max_length=20)
+
+    nombre_comercial             = serializers.CharField(required=False, max_length=200)
+
+    nivel_riesgo_id              = serializers.IntegerField(required=False, min_value=1)
+    direccion                    = serializers.CharField(required=False, max_length=300)
+    numero_recibo_pago           = serializers.CharField(required=False, max_length=50)
+
+    fecha_notificacion_desde     = serializers.DateField(required=False)
+    fecha_notificacion_hasta     = serializers.DateField(required=False)
+
+    esta_activo                  = serializers.BooleanField(required=False)
+    giro_nombre                  = serializers.CharField(required=False, max_length=200)
 
     def validate(self, attrs):
-        _FILTROS = [
-            'titular_nombre',
-            'numero_itse',
-            'anio_itse',
-            'titular_numero_documento',
-            'conductor_numero_documento',
-        ]
-        if not any(attrs.get(f) for f in _FILTROS):
+        return attrs
+
+
+class ItsePorRenovarQuerySerializer(serializers.Serializer):
+    """
+    Valida los parámetros de consulta del endpoint de ITSE por renovar.
+
+    Parámetros requeridos
+    ---------------------
+    fecha_desde : date  — extremo inferior del rango de fecha de caducidad.
+    fecha_hasta : date  — extremo superior del rango de fecha de caducidad.
+    """
+    fecha_desde = serializers.DateField(required=True)
+    fecha_hasta = serializers.DateField(required=True)
+
+    def validate(self, attrs):
+        if attrs['fecha_desde'] > attrs['fecha_hasta']:
             raise serializers.ValidationError(
-                'Debe proporcionar al menos un filtro de búsqueda.'
+                'fecha_desde no puede ser posterior a fecha_hasta.'
             )
         return attrs
 

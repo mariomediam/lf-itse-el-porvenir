@@ -8,6 +8,7 @@ lo que facilita reutilización, pruebas unitarias y futuros cambios.
 import logging
 from datetime import date, datetime, timedelta
 
+from auditlog.context import set_actor
 from django.core.files.storage import default_storage
 from django.db import connection, transaction
 from django.shortcuts import get_object_or_404
@@ -132,18 +133,19 @@ def crear_expediente(data: dict, usuario) -> Expediente:
         dias_alerta=tipo.dias_alerta_vencimiento,
     )
 
-    expediente = Expediente.objects.create(
-        tipo_procedimiento_tupa=tipo,
-        numero_expediente=numero,
-        fecha_recepcion=fecha_recepcion,
-        solicitante_id=data['solicitante_id'],
-        representante_id=data.get('representante_id'),
-        observaciones=data.get('observaciones'),
-        fecha_vencimiento=plazos['fecha_vencimiento'],
-        fecha_alerta=plazos['fecha_alerta'],
-        usuario=usuario,
-        fecha_digitacion=timezone.now(),
-    )
+    with set_actor(usuario), transaction.atomic():
+        expediente = Expediente.objects.create(
+            tipo_procedimiento_tupa=tipo,
+            numero_expediente=numero,
+            fecha_recepcion=fecha_recepcion,
+            solicitante_id=data['solicitante_id'],
+            representante_id=data.get('representante_id'),
+            observaciones=data.get('observaciones'),
+            fecha_vencimiento=plazos['fecha_vencimiento'],
+            fecha_alerta=plazos['fecha_alerta'],
+            usuario=usuario,
+            fecha_digitacion=timezone.now(),
+        )
 
     return expediente
 
@@ -157,9 +159,9 @@ SELECT
     e.fecha_vencimiento,
     e.fecha_alerta,
     TRIM(
-        COALESCE(tsolicitante.apellido_paterno, '') || ' ' ||
-        COALESCE(tsolicitante.apellido_materno, '') || ' ' ||
-        COALESCE(tsolicitante.nombres, '')
+        CONCAT(COALESCE(tsolicitante.apellido_paterno, ''), ' ',
+        COALESCE(tsolicitante.apellido_materno, ''), ' ',
+        COALESCE(tsolicitante.nombres, ''))
     ) AS persona_nombre,
     texpedientes.licencia_pendiente,
     texpedientes.itse_pendiente,
@@ -236,7 +238,7 @@ def listar_expedientes_pendientes() -> list[dict]:
     """
     with connection.cursor() as cursor:
         cursor.execute(_SQL_EXPEDIENTES_PENDIENTES)
-        columnas = [col.name for col in cursor.description]
+        columnas = [col[0] for col in cursor.description]
         return [dict(zip(columnas, fila)) for fila in cursor.fetchall()]
 
 
@@ -268,9 +270,9 @@ _SQL_BUSCAR_INTERNA = """
         tpt.requiere_itse,
         tpt.requiere_lf,
         TRIM(
-            COALESCE(tsolicitante.apellido_paterno, '') || ' ' ||
-            COALESCE(tsolicitante.apellido_materno, '') || ' ' ||
-            COALESCE(tsolicitante.nombres, '')
+            CONCAT(COALESCE(tsolicitante.apellido_paterno, ''), ' ',
+            COALESCE(tsolicitante.apellido_materno, ''), ' ',
+            COALESCE(tsolicitante.nombres, ''))
         )                             AS solicitante_nombre,
         tsolicitante_ruc.numero_documento AS solicitante_ruc
     FROM expedientes
@@ -337,7 +339,7 @@ _FILTROS_BUSQUEDA: dict[str, tuple[str, callable]] = {
         int,
     ),
     'FECHA_RECEPCION': (
-        "WHERE expedientes.fecha_recepcion::date = %s",
+        "WHERE DATE(expedientes.fecha_recepcion) = %s",
         str,
     ),
     'FECHA_VENCIMIENTO': (
@@ -346,9 +348,9 @@ _FILTROS_BUSQUEDA: dict[str, tuple[str, callable]] = {
     ),
     'NOMBRE_SOLICITANTE': (
         "WHERE TRIM("
-        "    COALESCE(tsolicitante.apellido_paterno, '') || ' ' ||"
-        "    COALESCE(tsolicitante.apellido_materno, '') || ' ' ||"
-        "    COALESCE(tsolicitante.nombres, '')"
+        "    CONCAT(COALESCE(tsolicitante.apellido_paterno, ''), ' ',"
+        "    COALESCE(tsolicitante.apellido_materno, ''), ' ',"
+        "    COALESCE(tsolicitante.nombres, ''))"
         ") ILIKE %s",
         lambda v: '%' + v.replace(' ', '%') + '%',
     ),
@@ -414,7 +416,7 @@ def buscar_expedientes(filtro: str, valor: str) -> list[dict]:
 
     with connection.cursor() as cursor:
         cursor.execute(sql_final, [valor_param])
-        columnas = [col.name for col in cursor.description]
+        columnas = [col[0] for col in cursor.description]
         return [dict(zip(columnas, fila)) for fila in cursor.fetchall()]
 
 
@@ -458,7 +460,7 @@ def buscar_expedientes_con_plazo(
     return filas
 
 
-def actualizar_expediente(pk: int, data: dict) -> Expediente:
+def actualizar_expediente(pk: int, data: dict, usuario) -> Expediente:
     """
     Modifica los campos editables de un expediente y recalcula sus plazos.
 
@@ -511,30 +513,31 @@ def actualizar_expediente(pk: int, data: dict) -> Expediente:
 
     fecha_alerta = calcular_fecha_alerta(fecha_vencimiento, tipo.dias_alerta_vencimiento)
 
-    expediente.tipo_procedimiento_tupa = tipo
-    expediente.numero_expediente       = data['numero_expediente']
-    expediente.fecha_recepcion         = data['fecha_recepcion']
-    expediente.solicitante_id          = data['solicitante_id']
-    expediente.representante_id        = data.get('representante_id')
-    expediente.observaciones           = data.get('observaciones')
-    expediente.fecha_vencimiento       = fecha_vencimiento
-    expediente.fecha_alerta            = fecha_alerta
+    with set_actor(usuario), transaction.atomic():
+        expediente.tipo_procedimiento_tupa = tipo
+        expediente.numero_expediente       = data['numero_expediente']
+        expediente.fecha_recepcion         = data['fecha_recepcion']
+        expediente.solicitante_id          = data['solicitante_id']
+        expediente.representante_id        = data.get('representante_id')
+        expediente.observaciones           = data.get('observaciones')
+        expediente.fecha_vencimiento       = fecha_vencimiento
+        expediente.fecha_alerta            = fecha_alerta
 
-    expediente.save(update_fields=[
-        'tipo_procedimiento_tupa',
-        'numero_expediente',
-        'fecha_recepcion',
-        'solicitante_id',
-        'representante_id',
-        'observaciones',
-        'fecha_vencimiento',
-        'fecha_alerta',
-    ])
+        expediente.save(update_fields=[
+            'tipo_procedimiento_tupa',
+            'numero_expediente',
+            'fecha_recepcion',
+            'solicitante_id',
+            'representante_id',
+            'observaciones',
+            'fecha_vencimiento',
+            'fecha_alerta',
+        ])
 
     return expediente
 
 
-def eliminar_expediente(pk: int) -> None:
+def eliminar_expediente(pk: int, usuario) -> None:
     """
     Elimina un expediente y todos sus registros dependientes.
 
@@ -590,7 +593,7 @@ def eliminar_expediente(pk: int) -> None:
         .values_list('ruta_archivo', flat=True)
     )
 
-    with transaction.atomic():
+    with set_actor(usuario), transaction.atomic():
         expediente.delete()
 
     # Eliminar archivos físicos fuera de la transacción
@@ -693,10 +696,10 @@ WITH expedientes_filtrados AS (
 solicitante_docs AS (
     SELECT
         e.id AS expediente_id,
-        STRING_AGG(
-            tdi.nombre || ' ' || pd.numero_documento,
-            ', '
-            ORDER BY tdi.nombre || ' ' || pd.numero_documento
+        GROUP_CONCAT(
+            CONCAT(tdi.nombre, ' ', pd.numero_documento)
+            ORDER BY CONCAT(tdi.nombre, ' ', pd.numero_documento)
+            SEPARATOR ', '
         ) AS solicitante_documentos
     FROM expedientes e
     JOIN expedientes_filtrados ef ON e.id = ef.id
@@ -709,10 +712,10 @@ solicitante_docs AS (
 representante_docs AS (
     SELECT
         e.id AS expediente_id,
-        STRING_AGG(
-            tdi.nombre || ' ' || pd.numero_documento,
-            ', '
-            ORDER BY tdi.nombre || ' ' || pd.numero_documento
+        GROUP_CONCAT(
+            CONCAT(tdi.nombre, ' ', pd.numero_documento)
+            ORDER BY CONCAT(tdi.nombre, ' ', pd.numero_documento)
+            SEPARATOR ', '
         ) AS representante_documentos
     FROM expedientes e
     JOIN expedientes_filtrados ef ON e.id = ef.id
@@ -727,24 +730,24 @@ SELECT
     tpt.nombre AS tipo_procedimiento_tupa_nombre,
     e.fecha_recepcion,
     TRIM(
-        COALESCE(tsolicitante.apellido_paterno, '') || ' ' ||
-        COALESCE(tsolicitante.apellido_materno, '') || ' ' ||
-        COALESCE(tsolicitante.nombres, '')
+        CONCAT(COALESCE(tsolicitante.apellido_paterno, ''), ' ',
+        COALESCE(tsolicitante.apellido_materno, ''), ' ',
+        COALESCE(tsolicitante.nombres, ''))
     ) AS solicitante_nombre,
     COALESCE(sd.solicitante_documentos, '')       AS solicitante_documentos,
     TRIM(
-        COALESCE(trepresentante.apellido_paterno, '') || ' ' ||
-        COALESCE(trepresentante.apellido_materno, '') || ' ' ||
-        COALESCE(trepresentante.nombres, '')
+        CONCAT(COALESCE(trepresentante.apellido_paterno, ''), ' ',
+        COALESCE(trepresentante.apellido_materno, ''), ' ',
+        COALESCE(trepresentante.nombres, ''))
     ) AS representante_nombre,
     COALESCE(rd.representante_documentos, '')     AS representante_documentos,
     CASE
-        WHEN lf.numero_licencia IS NOT NULL        THEN CAST(lf.numero_licencia AS TEXT)
+        WHEN lf.numero_licencia IS NOT NULL        THEN CAST(lf.numero_licencia AS CHAR)
         WHEN tlf_imp.expediente_id IS NOT NULL     THEN 'IMPROCEDENTE'
         ELSE ''
     END AS licencia_funcionamiento,
     CASE
-        WHEN i.numero_itse IS NOT NULL             THEN CAST(i.numero_itse AS TEXT)
+        WHEN i.numero_itse IS NOT NULL             THEN CAST(i.numero_itse AS CHAR)
         WHEN titse_imp.expediente_id IS NOT NULL   THEN 'DESFAVORABLE'
         ELSE ''
     END AS itse
@@ -811,9 +814,9 @@ def consultar_expedientes(filtros: dict) -> list[dict]:
     if solicitante_nombre:
         conditions.append(
             "TRIM("
-            "    COALESCE(tsolicitante.apellido_paterno, '') || ' ' ||"
-            "    COALESCE(tsolicitante.apellido_materno, '') || ' ' ||"
-            "    COALESCE(tsolicitante.nombres, '')"
+            "    CONCAT(COALESCE(tsolicitante.apellido_paterno, ''), ' ',"
+            "    COALESCE(tsolicitante.apellido_materno, ''), ' ',"
+            "    COALESCE(tsolicitante.nombres, ''))"
             ") ILIKE %s"
         )
         params.append('%' + solicitante_nombre.replace(' ', '%') + '%')
@@ -844,7 +847,7 @@ def consultar_expedientes(filtros: dict) -> list[dict]:
 
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
-        columnas = [col.name for col in cursor.description]
+        columnas = [col[0] for col in cursor.description]
         return [dict(zip(columnas, fila)) for fila in cursor.fetchall()]
 
 

@@ -8,6 +8,7 @@ from .views import (
     ExpedienteArchivoDetailView,
     ExpedienteArchivoDownloadView,
     ExpedienteArchivoUploadView,
+    FechaServidorView,
     ExpedienteCreateView,
     ExpedienteUpdateView,
     ExpedientesBuscarView,
@@ -24,6 +25,7 @@ from .views import (
     LicenciaFuncionamientoVerificarExpedienteView,
     ExpedientesConsultaView,
     ItseConsultaView,
+    ItsePorRenovarView,
     LicenciasFuncionamientoBuscarView,
     LicenciasFuncionamientoConsultaView,
     LicenciasFuncionamientoReporteView,
@@ -71,6 +73,9 @@ from .views import (
 app_name = 'lf_itse'
 
 urlpatterns = [
+    # Fecha del servidor
+    path('fecha-servidor/', FechaServidorView.as_view(), name='fecha-servidor'),
+
     # Expedientes
     path('expedientes/', ExpedienteCreateView.as_view(), name='expediente-create'),
     path('expedientes/<int:pk>/', ExpedienteUpdateView.as_view(), name='expediente-update'),
@@ -88,7 +93,8 @@ urlpatterns = [
     # ITSE
     path('itse/', ItseCreateView.as_view(), name='itse-create'),
     path('itse/buscar/',   ItseBuscarView.as_view(),   name='itse-buscar'),
-    path('itse/consulta/', ItseConsultaView.as_view(), name='itse-consulta'),
+    path('itse/consulta/',    ItseConsultaView.as_view(),    name='itse-consulta'),
+    path('itse/por-renovar/', ItsePorRenovarView.as_view(), name='itse-por-renovar'),
     path(
         'itse/verificar-expediente/',
         ItseVerificarExpedienteView.as_view(),
