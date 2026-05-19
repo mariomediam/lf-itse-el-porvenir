@@ -696,10 +696,10 @@ WITH expedientes_filtrados AS (
 solicitante_docs AS (
     SELECT
         e.id AS expediente_id,
-        GROUP_CONCAT(
-            CONCAT(tdi.nombre, ' ', pd.numero_documento)
-            ORDER BY CONCAT(tdi.nombre, ' ', pd.numero_documento)
-            SEPARATOR ', '
+        STRING_AGG(
+            tdi.nombre || ' ' || pd.numero_documento,
+            ', '
+            ORDER BY tdi.nombre || ' ' || pd.numero_documento
         ) AS solicitante_documentos
     FROM expedientes e
     JOIN expedientes_filtrados ef ON e.id = ef.id
@@ -712,10 +712,10 @@ solicitante_docs AS (
 representante_docs AS (
     SELECT
         e.id AS expediente_id,
-        GROUP_CONCAT(
-            CONCAT(tdi.nombre, ' ', pd.numero_documento)
-            ORDER BY CONCAT(tdi.nombre, ' ', pd.numero_documento)
-            SEPARATOR ', '
+        STRING_AGG(
+            tdi.nombre || ' ' || pd.numero_documento,
+            ', '
+            ORDER BY tdi.nombre || ' ' || pd.numero_documento
         ) AS representante_documentos
     FROM expedientes e
     JOIN expedientes_filtrados ef ON e.id = ef.id
@@ -742,12 +742,12 @@ SELECT
     ) AS representante_nombre,
     COALESCE(rd.representante_documentos, '')     AS representante_documentos,
     CASE
-        WHEN lf.numero_licencia IS NOT NULL        THEN CAST(lf.numero_licencia AS CHAR)
+        WHEN lf.numero_licencia IS NOT NULL        THEN CAST(lf.numero_licencia AS TEXT)
         WHEN tlf_imp.expediente_id IS NOT NULL     THEN 'IMPROCEDENTE'
         ELSE ''
     END AS licencia_funcionamiento,
     CASE
-        WHEN i.numero_itse IS NOT NULL             THEN CAST(i.numero_itse AS CHAR)
+        WHEN i.numero_itse IS NOT NULL             THEN CAST(i.numero_itse AS TEXT)
         WHEN titse_imp.expediente_id IS NOT NULL   THEN 'DESFAVORABLE'
         ELSE ''
     END AS itse
