@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import QRCode from 'react-qr-code'
 import { licenciasApi } from '@api/licenciasApi'
 import { personasApi } from '@api/personasApi'
+import { configPublicaApi } from '@api/configPublicaApi'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -83,6 +85,7 @@ const LicenciaImprimirPage = () => {
   const [licencia,     setLicencia]     = useState(null)
   const [giros,        setGiros]        = useState([])
   const [docIdentidad, setDocIdentidad] = useState(null)
+  const [qrUrl,        setQrUrl]        = useState(null)
   const [cargando,     setCargando]     = useState(true)
   const [error,        setError]        = useState(null)
 
@@ -90,9 +93,10 @@ const LicenciaImprimirPage = () => {
     const cargar = async () => {
       try {
         setCargando(true)
-        const [licRes, girosRes] = await Promise.all([
+        const [licRes, girosRes, configRes] = await Promise.all([
           licenciasApi.buscar('ID', id),
           licenciasApi.getGiros(id),
+          configPublicaApi.getConfig().catch(() => ({ data: {} })),
         ])
 
         const lic = licRes.data[0]
@@ -100,6 +104,12 @@ const LicenciaImprimirPage = () => {
 
         setLicencia(lic)
         setGiros(girosRes.data)
+
+        const cfg = configRes.data
+        if (cfg.qr_verificacion_habilitado && cfg.public_app_base_url && lic.uuid) {
+          const base = cfg.public_app_base_url.replace(/\/+$/, '')
+          setQrUrl(`${base}/verificar/licencia/${lic.uuid}`)
+        }
 
         if (lic.conductor_id) {
           try {
@@ -367,14 +377,24 @@ const LicenciaImprimirPage = () => {
           {/* Espaciador: empuja los párrafos al fondo */}
           <div style={{ flex: 1 }} />
 
-          {/* ── PÁRRAFOS LEGALES ── */}
-          <div style={{ borderTop: '1px solid #000', paddingTop: '8px' }}>
-            {PARRAFOS_LEGALES.map((texto, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '3px' }}>
-                <span style={{ marginRight: '5px', fontSize: '9px', lineHeight: '1.5', flexShrink: 0 }}>❖</span>
-                <p style={{ margin: 0, fontSize: '9px', lineHeight: '1.4' }}>{texto}</p>
+          {/* ── PÁRRAFOS LEGALES + QR ── */}
+          <div style={{ borderTop: '1px solid #000', paddingTop: '8px', display: 'flex', gap: '10px' }}>
+            <div style={{ flex: 1 }}>
+              {PARRAFOS_LEGALES.map((texto, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '3px' }}>
+                  <span style={{ marginRight: '5px', fontSize: '9px', lineHeight: '1.5', flexShrink: 0 }}>❖</span>
+                  <p style={{ margin: 0, fontSize: '9px', lineHeight: '1.4' }}>{texto}</p>
+                </div>
+              ))}
+            </div>
+            {qrUrl && (
+              <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <QRCode value={qrUrl} size={80} level="M" />
+                <p style={{ fontSize: '7px', margin: '3px 0 0 0', textAlign: 'center', color: '#555' }}>
+                  Verificar documento
+                </p>
               </div>
-            ))}
+            )}
           </div>
 
           </div>{/* fin contenido con padding */}

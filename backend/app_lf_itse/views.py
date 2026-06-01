@@ -1,15 +1,18 @@
 import logging
+from datetime import date
 
 import mimetypes
 
+from django.conf import settings as django_settings
 from django.core.files.storage import default_storage
 from django.db.models import ProtectedError
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
 from .models import (
@@ -3580,3 +3583,122 @@ class ItseInspectoresView(APIView):
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ENDPOINTS PÚBLICOS — Verificación QR
+# ══════════════════════════════════════════════════════════════════════════════
+
+class VerificacionPublicaThrottle(AnonRateThrottle):
+    rate = '60/min'
+
+
+class ConfigPublicaView(APIView):
+    """
+    GET /api/lf-itse/config-publica/
+
+    Retorna la configuración pública del sistema (sin autenticación).
+    Permite al frontend saber si el QR de verificación está habilitado
+    y cuál es la URL base de la aplicación.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        return Response({
+            'qr_verificacion_habilitado': django_settings.QR_VERIFICACION_HABILITADO,
+            'public_app_base_url': django_settings.PUBLIC_APP_BASE_URL,
+        })
+
+
+class VerificarLicenciaPublicaView(APIView):
+    """
+    GET /api/lf-itse/verificar/licencia/<uuid>/
+
+    Verificación pública de licencia de funcionamiento.
+    Retorna datos mínimos del certificado para validar su autenticidad.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [VerificacionPublicaThrottle]
+
+    def get(self, request, uuid):
+        licencia = LicenciaFuncionamiento.objects.filter(
+            uuid=uuid,
+            se_puede_publicar=True,
+        ).select_related('nivel_riesgo').first()
+
+        if not licencia:
+            return Response(
+                {'error': 'Documento no encontrado o no disponible para consulta pública.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        tiene_estado_inactivo = licencia.historial_estados.filter(
+            estado__esta_activo=False,
+        ).exists()
+        activa = not tiene_estado_inactivo
+
+        if licencia.es_vigencia_indeterminada:
+            vigente = activa
+        elif licencia.fecha_fin_vigencia:
+            vigente = activa and licencia.fecha_fin_vigencia >= date.today()
+        else:
+            vigente = activa
+
+        return Response({
+            'valido': True,
+            'tipo': 'licencia_funcionamiento',
+            'numero': licencia.numero_licencia,
+            'anio': licencia.fecha_emision.year,
+            'nombre_comercial': licencia.nombre_comercial,
+            'direccion': licencia.direccion,
+            'nivel_riesgo': licencia.nivel_riesgo.nombre if licencia.nivel_riesgo else '',
+            'vigente': vigente,
+            'activa': activa,
+            'mensaje': 'Documento registrado en la Municipalidad Provincial de Lamas.',
+        })
+
+
+class VerificarItsePublicaView(APIView):
+    """
+    GET /api/lf-itse/verificar/itse/<uuid>/
+
+    Verificación pública de certificado ITSE.
+    Retorna datos mínimos del certificado para validar su autenticidad.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [VerificacionPublicaThrottle]
+
+    def get(self, request, uuid):
+        itse = Itse.objects.filter(
+            uuid=uuid,
+            se_puede_publicar=True,
+        ).select_related('nivel_riesgo').first()
+
+        if not itse:
+            return Response(
+                {'error': 'Documento no encontrado o no disponible para consulta pública.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        tiene_estado_inactivo = itse.historial_estados.filter(
+            estado__esta_activo=False,
+        ).exists()
+        activa = not tiene_estado_inactivo
+        vigente = activa and itse.fecha_caducidad >= date.today()
+
+        return Response({
+            'valido': True,
+            'tipo': 'certificado_itse',
+            'numero': itse.numero_itse,
+            'anio': itse.fecha_expedicion.year,
+            'nombre_comercial': itse.nombre_comercial,
+            'direccion': itse.direccion,
+            'nivel_riesgo': itse.nivel_riesgo.nombre if itse.nivel_riesgo else '',
+            'fecha_caducidad': itse.fecha_caducidad.isoformat(),
+            'vigente': vigente,
+            'activa': activa,
+            'mensaje': 'Documento registrado en la Municipalidad Provincial de Lamas.',
+        })

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import QRCode from 'react-qr-code'
 import { itseApi } from '@api/itseApi'
+import { configPublicaApi } from '@api/configPublicaApi'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -77,6 +79,7 @@ const ItseImprimirPage = () => {
 
   const [itse,     setItse]     = useState(null)
   const [giros,    setGiros]    = useState([])
+  const [qrUrl,    setQrUrl]    = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error,    setError]    = useState(null)
 
@@ -84,14 +87,21 @@ const ItseImprimirPage = () => {
     const cargar = async () => {
       try {
         setCargando(true)
-        const [itseRes, girosRes] = await Promise.all([
+        const [itseRes, girosRes, configRes] = await Promise.all([
           itseApi.buscar('ID', id),
           itseApi.getGiros(id),
+          configPublicaApi.getConfig().catch(() => ({ data: {} })),
         ])
         const item = itseRes.data[0]
         if (!item) { setError('Certificado ITSE no encontrado.'); return }
         setItse(item)
         setGiros(girosRes.data)
+
+        const cfg = configRes.data
+        if (cfg.qr_verificacion_habilitado && cfg.public_app_base_url && item.uuid) {
+          const base = cfg.public_app_base_url.replace(/\/+$/, '')
+          setQrUrl(`${base}/verificar/itse/${item.uuid}`)
+        }
       } catch {
         setError('Error al cargar los datos del certificado ITSE.')
       } finally {
@@ -380,23 +390,33 @@ const ItseImprimirPage = () => {
           {/* Espaciador */}
           <div style={{ flex: 1 }} />
 
-          {/* ── NOTA LEGAL ── */}
-          <div style={{ borderTop: '1px solid #000', paddingTop: '6px' }}>
-            <p style={{ fontWeight: 'bold', fontStyle: 'italic', fontSize: '8.5px', textAlign: 'center', margin: '0 0 4px 0' }}>
-              *EL PRESENTE CERTIFICADO DE ITSE NO CONSTITUYE AUTORIZACIÓN ALGUNA PARA EL FUNCIONAMIENTO DEL
-              ESTABLECIMIENTO OBJETO DE INSPECCIÓN O PARA EL INICIO DE LA ACTIVIDAD
-            </p>
-            <p style={{ fontWeight: 'bold', fontSize: '9px', margin: '0 0 3px 0' }}>NOTA:</p>
-            {[
-              'DE ACUERDO A LO ESTABLECIDO EN EL REGLAMENTO DE INSPECCIONES TÉCNICAS DE SEGURIDAD EN EDIFICACIONES APROBADO POR DECRETO SUPREMO N° 002-2018 PCM, EL PRESENTE CERTIFICADO DEBERÁ SER FIRMADO POR EL RESPONSABLE DEL ÓRGANO EJECUTANTE.',
-              'ESTE CERTIFICADO DEBERÁ COLOCARSE EN UN LUGAR VISIBLE DENTRO DEL ESTABLECIMIENTO OBJETO DE INSPECCIÓN.',
-              'CUALQUIER TACHA O ENMENDADURA INVALIDA EL PRESENTE CERTIFICADO.',
-            ].map((texto, i) => (
-              <div key={i} style={{ display: 'flex', gap: '4px', marginBottom: '2px' }}>
-                <span style={{ fontSize: '8.5px', flexShrink: 0 }}>-</span>
-                <p style={{ margin: 0, fontSize: '8.5px', lineHeight: '1.4' }}>{texto}</p>
+          {/* ── NOTA LEGAL + QR ── */}
+          <div style={{ borderTop: '1px solid #000', paddingTop: '6px', display: 'flex', gap: '10px' }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontWeight: 'bold', fontStyle: 'italic', fontSize: '8.5px', textAlign: 'center', margin: '0 0 4px 0' }}>
+                *EL PRESENTE CERTIFICADO DE ITSE NO CONSTITUYE AUTORIZACIÓN ALGUNA PARA EL FUNCIONAMIENTO DEL
+                ESTABLECIMIENTO OBJETO DE INSPECCIÓN O PARA EL INICIO DE LA ACTIVIDAD
+              </p>
+              <p style={{ fontWeight: 'bold', fontSize: '9px', margin: '0 0 3px 0' }}>NOTA:</p>
+              {[
+                'DE ACUERDO A LO ESTABLECIDO EN EL REGLAMENTO DE INSPECCIONES TÉCNICAS DE SEGURIDAD EN EDIFICACIONES APROBADO POR DECRETO SUPREMO N° 002-2018 PCM, EL PRESENTE CERTIFICADO DEBERÁ SER FIRMADO POR EL RESPONSABLE DEL ÓRGANO EJECUTANTE.',
+                'ESTE CERTIFICADO DEBERÁ COLOCARSE EN UN LUGAR VISIBLE DENTRO DEL ESTABLECIMIENTO OBJETO DE INSPECCIÓN.',
+                'CUALQUIER TACHA O ENMENDADURA INVALIDA EL PRESENTE CERTIFICADO.',
+              ].map((texto, i) => (
+                <div key={i} style={{ display: 'flex', gap: '4px', marginBottom: '2px' }}>
+                  <span style={{ fontSize: '8.5px', flexShrink: 0 }}>-</span>
+                  <p style={{ margin: 0, fontSize: '8.5px', lineHeight: '1.4' }}>{texto}</p>
+                </div>
+              ))}
+            </div>
+            {qrUrl && (
+              <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <QRCode value={qrUrl} size={80} level="M" />
+                <p style={{ fontSize: '7px', margin: '3px 0 0 0', textAlign: 'center', color: '#555' }}>
+                  Verificar documento
+                </p>
               </div>
-            ))}
+            )}
           </div>
 
         </div>
