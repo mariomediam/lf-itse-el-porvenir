@@ -98,9 +98,9 @@ const ItseImprimirPage = () => {
         setGiros(girosRes.data)
 
         const cfg = configRes.data
-        if (cfg.qr_verificacion_habilitado && cfg.public_app_base_url && item.uuid) {
-          const base = cfg.public_app_base_url.replace(/\/+$/, '')
-          setQrUrl(`${base}/verificar/itse/${item.uuid}`)
+        if (cfg.qr_verificacion_habilitado && cfg.qr_url_verificar_itse && item.uuid) {
+          const base = cfg.qr_url_verificar_itse.replace(/\/+$/, '')
+          setQrUrl(`${base}/${item.uuid}`)
         }
       } catch {
         setError('Error al cargar los datos del certificado ITSE.')

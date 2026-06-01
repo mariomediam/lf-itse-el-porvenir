@@ -106,9 +106,9 @@ const LicenciaImprimirPage = () => {
         setGiros(girosRes.data)
 
         const cfg = configRes.data
-        if (cfg.qr_verificacion_habilitado && cfg.public_app_base_url && lic.uuid) {
-          const base = cfg.public_app_base_url.replace(/\/+$/, '')
-          setQrUrl(`${base}/verificar/licencia/${lic.uuid}`)
+        if (cfg.qr_verificacion_habilitado && cfg.qr_url_verificar_licencia && lic.uuid) {
+          const base = cfg.qr_url_verificar_licencia.replace(/\/+$/, '')
+          setQrUrl(`${base}/${lic.uuid}`)
         }
 
         if (lic.conductor_id) {

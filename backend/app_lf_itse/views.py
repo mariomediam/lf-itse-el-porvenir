@@ -3607,7 +3607,8 @@ class ConfigPublicaView(APIView):
     def get(self, request):
         return Response({
             'qr_verificacion_habilitado': django_settings.QR_VERIFICACION_HABILITADO,
-            'public_app_base_url': django_settings.PUBLIC_APP_BASE_URL,
+            'qr_url_verificar_licencia': django_settings.QR_URL_VERIFICAR_LICENCIA,
+            'qr_url_verificar_itse': django_settings.QR_URL_VERIFICAR_ITSE,
         })
 
 
