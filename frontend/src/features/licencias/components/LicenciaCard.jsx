@@ -192,9 +192,15 @@ export default function LicenciaCard({ licencia, onRefrescar }) {
           </p>
 
           {/* Actividad */}
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 mb-0.5">
             Actividad económica:{' '}
             <strong className="text-gray-700">{licencia.actividad}</strong>
+          </p>
+
+          {/* Tipo de letrero */}
+          <p className="text-xs text-gray-500">
+            Tipo de letrero:{' '}
+            <strong className="text-gray-700">{licencia.tipo_letrero_nombre || '-'}</strong>
           </p>
         </div>
 

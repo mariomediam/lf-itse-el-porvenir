@@ -30,6 +30,9 @@ export const licenciasApi = {
   getZonificaciones: () =>
     api.get('/api/lf-itse/zonificaciones/', { params: { esta_activo: 'true' } }),
 
+  getTiposLetrero: () =>
+    api.get('/api/lf-itse/tipos-letrero/', { params: { esta_activo: 'true' } }),
+
   buscarGiros: (busqueda) =>
     api.get('/api/lf-itse/giros/buscar/', { params: { busqueda, esta_activo: 'true' } }),
 

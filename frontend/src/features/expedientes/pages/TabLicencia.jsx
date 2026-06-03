@@ -113,10 +113,11 @@ function CardDatosPrincipales({ licencia }) {
         <Campo etiqueta="Resolución"       valor={licencia.resolucion_numero} />
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
         <Campo etiqueta="Nivel de riesgo"   valor={licencia.nivel_riesgo_nombre} />
         <Campo etiqueta="Horario"           valor={formatHorario(licencia.hora_desde, licencia.hora_hasta)} />
         <Campo etiqueta="Número de recibo"  valor={licencia.numero_recibo_pago} />
+        <Campo etiqueta="Tipo de letrero"   valor={licencia.tipo_letrero_nombre} />
       </div>
 
       {(licencia.observaciones || licencia.fecha_notificacion) && (

@@ -94,6 +94,7 @@ export default function ModificarLicenciaPage() {
   const [tiposLicencia,  setTiposLicencia]  = useState([])
   const [nivelesRiesgo,  setNivelesRiesgo]  = useState([])
   const [zonificaciones, setZonificaciones] = useState([])
+  const [tiposLetrero,   setTiposLetrero]   = useState([])
   const [loadingCatalogos, setLoadingCatalogos] = useState(true)
 
   // Estado de carga de la licencia
@@ -114,6 +115,7 @@ export default function ModificarLicenciaPage() {
   const [horaDesde,            setHoraDesde]            = useState('')
   const [horaHasta,            setHoraHasta]            = useState('')
   const [numeroReciboPago,     setNumeroReciboPago]     = useState('')
+  const [tipoLetreroId,        setTipoLetreroId]        = useState('')
 
   // Titular y representante legal
   const [titular,       setTitular]      = useState(null)
@@ -150,11 +152,13 @@ export default function ModificarLicenciaPage() {
       licenciasApi.getTiposLicencia(),
       licenciasApi.getNivelesRiesgo(),
       licenciasApi.getZonificaciones(),
+      licenciasApi.getTiposLetrero(),
     ])
-      .then(([tipos, niveles, zonas]) => {
+      .then(([tipos, niveles, zonas, letreros]) => {
         setTiposLicencia(tipos.data)
         setNivelesRiesgo(niveles.data)
         setZonificaciones(zonas.data)
+        setTiposLetrero(letreros.data)
       })
       .catch(() => toast.error('Error al cargar los catálogos'))
       .finally(() => setLoadingCatalogos(false))
@@ -195,6 +199,7 @@ export default function ModificarLicenciaPage() {
         setHoraDesde(String(lf.hora_desde))
         setHoraHasta(String(lf.hora_hasta))
         setNumeroReciboPago(lf.numero_recibo_pago ?? '')
+        setTipoLetreroId(lf.tipo_letrero_id != null ? String(lf.tipo_letrero_id) : '')
 
         // Establecimiento
         setNombreComercial(lf.nombre_comercial ?? '')
@@ -256,6 +261,7 @@ export default function ModificarLicenciaPage() {
     if (!nivelRiesgoId)    { toast.error('Seleccione el nivel de riesgo');             return }
     if (!horaDesde)        { toast.error('Ingrese la hora de inicio del horario');     return }
     if (!horaHasta)        { toast.error('Ingrese la hora de cierre del horario');     return }
+    if (!tipoLetreroId)    { toast.error('Seleccione el tipo de letrero');              return }
     if (!titular)          { toast.error('Seleccione el titular de la licencia');      return }
     if (!representante)    { toast.error('Seleccione el representante legal');         return }
     if (!nombreComercial)  { toast.error('Ingrese el nombre comercial');               return }
@@ -297,6 +303,7 @@ export default function ModificarLicenciaPage() {
       numero_recibo_pago:       numeroReciboPago.trim(),
       observaciones:            observaciones.trim() || null,
       se_puede_publicar:        false,
+      tipo_letrero_id:          Number(tipoLetreroId),
       giros:                    giros.map((g) => ({ giro_id: g.id })),
     }
 
@@ -542,7 +549,7 @@ export default function ModificarLicenciaPage() {
                   </div>
                 </div>
 
-                {/* Fila 4: Recibo */}
+                {/* Fila 4: Recibo, Tipo de letrero */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1.5">
@@ -555,6 +562,24 @@ export default function ModificarLicenciaPage() {
                       placeholder="Ej. 00567587 (opcional)"
                       className={inputClass}
                     />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                      Tipo de letrero <span className="text-danger">*</span>
+                    </label>
+                    <select
+                      value={tipoLetreroId}
+                      onChange={(e) => setTipoLetreroId(e.target.value)}
+                      disabled={loadingCatalogos}
+                      className={selectClass}
+                    >
+                      <option value="">
+                        {loadingCatalogos ? 'Cargando...' : 'Seleccione un tipo de letrero'}
+                      </option>
+                      {tiposLetrero.map((t) => (
+                        <option key={t.id} value={t.id}>{t.nombre}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
