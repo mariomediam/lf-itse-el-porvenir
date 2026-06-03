@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { QRCode } from 'react-qr-code'
 import { licenciasApi } from '@api/licenciasApi'
 import { personasApi } from '@api/personasApi'
-import { configPublicaApi } from '@api/configPublicaApi'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -11,40 +9,74 @@ const CODIGO_DNI = '01'
 const CODIGO_CE  = '04'
 
 const MESES = [
-  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+  'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
+  'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE',
 ]
-
-const NOTAS = [
-  'Este Certificado debe ser exhibido en lugar visible, bajo pena de multa y/o clausura del establecimiento u oficina.',
-  'No autoriza el uso de la vía pública, ni el retiro municipal.',
-  'El presente certificado, queda anulado por: Cambio de nombre o razón social, transferencia, traslado, ampliación del local, cambio de giro, fallecimiento del propietario, cuando el ITSE "no cumple" o cuando lo determine la autoridad municipal.',
-  'El cierre del establecimiento debe ser comunicado, previa devolución del cartón.',
-]
-
-const colores = {
-  "rojo": "#F70302"
-}
-  
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const formatFechaEnLetras = (fechaStr) => {
-  if (!fechaStr) return '-'
-  const d = new Date(fechaStr)
-  return `${d.getUTCDate()} de ${MESES[d.getUTCMonth()]} del ${d.getUTCFullYear()}`
-}
-
 const getAnio = (fechaStr) => {
-  if (!fechaStr) return '-'
+  if (!fechaStr) return ''
   return new Date(fechaStr).getUTCFullYear()
 }
 
-const etiquetaDocumento = (doc) => {
-  if (!doc) return 'DNI'
-  if (doc.tipos_documento_identidad_codigo === CODIGO_DNI) return 'DNI'
-  if (doc.tipos_documento_identidad_codigo === CODIGO_CE) return 'C.E.'
-  return doc.tipos_documento_identidad_nombre || 'DNI'
+const getDia = (fechaStr) => {
+  if (!fechaStr) return ''
+  return new Date(fechaStr).getUTCDate()
+}
+
+const getMes = (fechaStr) => {
+  if (!fechaStr) return ''
+  return MESES[new Date(fechaStr).getUTCMonth()]
+}
+
+const formatHora12 = (hora) => {
+  if (hora == null) return ''
+  const h = Number(hora)
+  if (h === 0) return '12:00 A.M.'
+  if (h === 12) return '12:00 P.M.'
+  if (h < 12) return `${String(h).padStart(2, '0')}:00 A.M.`
+  return `${String(h - 12).padStart(2, '0')}:00 P.M.`
+}
+
+const quitarPalabraRiesgo = (nombre) => {
+  if (!nombre) return ''
+  return nombre.replace(/riesgo\s*/gi, '').trim()
+}
+
+// ── Estilos comunes ───────────────────────────────────────────────────────────
+
+const estilos = {
+  campo: {
+    fontSize: '15px',
+    lineHeight: '2',
+    margin: '0',
+  },
+  etiqueta: {
+    fontWeight: 'normal',
+  },
+  valor: {
+    fontWeight: 'bold',
+  },
+}
+
+// ── Campo de formulario ───────────────────────────────────────────────────────
+
+function CampoFormulario({ etiqueta, valor, inline }) {
+  if (inline) {
+    return (
+      <p style={estilos.campo}>
+        <span style={estilos.etiqueta}>{etiqueta}: </span>
+        <span style={estilos.valor}>{valor || '-'}</span>
+      </p>
+    )
+  }
+  return (
+    <p style={estilos.campo}>
+      <span style={estilos.etiqueta}>{etiqueta}:</span>{' '}
+      <span style={estilos.valor}>{valor || '-'}</span>
+    </p>
+  )
 }
 
 // ── Página ────────────────────────────────────────────────────────────────────
@@ -55,8 +87,7 @@ const LicenciaImprimirPage = () => {
 
   const [licencia, setLicencia] = useState(null)
   const [giros, setGiros] = useState([])
-  const [docIdentidad, setDocIdentidad] = useState(null)
-  const [qrUrl, setQrUrl] = useState(null)
+  const [docConductor, setDocConductor] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
 
@@ -64,10 +95,9 @@ const LicenciaImprimirPage = () => {
     const cargar = async () => {
       try {
         setCargando(true)
-        const [licRes, girosRes, configRes] = await Promise.all([
+        const [licRes, girosRes] = await Promise.all([
           licenciasApi.buscar('ID', id),
           licenciasApi.getGiros(id),
-          configPublicaApi.getConfig().catch(() => ({ data: {} })),
         ])
 
         const lic = licRes.data[0]
@@ -76,19 +106,13 @@ const LicenciaImprimirPage = () => {
         setLicencia(lic)
         setGiros(girosRes.data)
 
-        const cfg = configRes.data
-        if (cfg.qr_verificacion_habilitado && cfg.qr_url_verificar_licencia && lic.uuid) {
-          const base = cfg.qr_url_verificar_licencia.replace(/\/+$/, '')
-          setQrUrl(`${base}/${lic.uuid}`)
-        }
-
         if (lic.conductor_id) {
           try {
             const docRes = await personasApi.getDocumentos(lic.conductor_id)
             const docs = docRes.data
             const docDni = docs.find((d) => d.tipos_documento_identidad_codigo === CODIGO_DNI)
             const docCe = docs.find((d) => d.tipos_documento_identidad_codigo === CODIGO_CE)
-            setDocIdentidad(docDni || docCe || null)
+            setDocConductor(docDni || docCe || null)
           } catch { /* continuar sin documento */ }
         }
       } catch {
@@ -127,15 +151,20 @@ const LicenciaImprimirPage = () => {
 
   // ── Datos calculados ──────────────────────────────────────────────────────
 
-  const anioLicencia = getAnio(licencia.fecha_emision)
-  const girosTexto = giros.map((g) => g.nombre).join(' Y ').toUpperCase()
+  const numLic = licencia.numero_licencia
+  const numExp = String(licencia.numero_expediente ?? '').padStart(4, '0')
+  const anioExp = getAnio(licencia.fecha_recepcion)
+  const girosTexto = giros.map((g) => g.nombre).join(', ').toUpperCase()
+  const nivelRiesgoLimpio = quitarPalabraRiesgo(licencia.nivel_riesgo_nombre)
+  const tipoLetrero = licencia.tipo_letrero_nombre || ''
+  const observaciones = licencia.observaciones?.trim()
+    ? licencia.observaciones.trim()
+    : '************************************************************'
 
-  const ubicacionConductor = [
-    licencia.conductor_direccion,
-    licencia.conductor_distrito ? `distrito ${licencia.conductor_distrito}` : null,
-    licencia.conductor_provincia ? `provincia ${licencia.conductor_provincia}` : null,
-    licencia.conductor_departamento ? `región ${licencia.conductor_departamento}` : null,
-  ].filter(Boolean).join(', ')
+  const docEtiqueta = docConductor
+    ? (docConductor.tipos_documento_identidad_nombre || 'D.N.I.')
+    : 'D.N.I.'
+  const docNumero = docConductor?.numero_documento || ''
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -170,7 +199,7 @@ const LicenciaImprimirPage = () => {
           Volver
         </button>
         <span className="text-sm text-gray-500 ml-2">
-          Vista previa — LIC. N° {licencia.numero_licencia} - {anioLicencia}
+          Vista previa — LIC. N° {numLic} - {getAnio(licencia.fecha_emision)}
         </span>
       </div>
 
@@ -180,161 +209,148 @@ const LicenciaImprimirPage = () => {
         {/* Hoja A4 */}
         <div className="hoja-a4" style={{
           width: '210mm',
-          height: '297mm',
+          minHeight: '297mm',
           margin: '0 auto',
           backgroundColor: '#ffffff',
-          padding: '8mm',
           boxSizing: 'border-box',
           fontFamily: 'Arial, sans-serif',
           color: '#000000',
-        }}>
-        {/* Borde interior */}
-        <div style={{
-          border: '4px solid #000180',
-          height: '100%',
-          padding: '4mm 12mm',
-          boxSizing: 'border-box',
-          position: 'relative',
-          overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
         }}>
 
-          {/* Imagen de fondo (marca de agua) */}
+          {/* ── HEADER (imagen) ── */}
           <img
-            src="/images/fondo-lf.png"
-            alt=""
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '90%',
-              opacity: 0.08,
-              pointerEvents: 'none',
-              zIndex: 0,
-            }}
+            src="/images/header-lf.png"
+            alt="Encabezado Municipalidad Provincial Sánchez Carrión"
+            style={{ width: '100%', display: 'block' }}
             onError={(e) => { e.target.style.display = 'none' }}
           />
 
-          {/* Contenido (sobre la marca de agua) */}
-          <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column' }}>
+          {/* ── CUERPO ── */}
+          <div style={{ flex: 1, marginTop: '-10mm', padding: '0mm 16mm 8mm 16mm', display: 'flex', flexDirection: 'column' }}>
 
-            {/* ── ENCABEZADO ── */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px', marginLeft: '-10mm' }}>
-              <img
-                src="/images/logo-lf.png"
-                alt="Logo"
-                style={{ height: '115px', width: 'auto', flexShrink: 0, opacity: 0.5 }}
-                onError={(e) => { e.target.style.display = 'none'}}
+            {/* Título */}
+            <h1 style={{
+              textAlign: 'center',
+              fontSize: '26px',
+              fontWeight: '900',
+              margin: '0 0 2px 0',
+              letterSpacing: '1px',
+            }}>
+              LICENCIA DE FUNCIONAMIENTO
+            </h1>
+
+            {/* Ley y número */}
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: '60px', marginBottom: '12px' }}>
+              <span style={{ fontSize: '16px', fontWeight: '900' }}>Ley N.° 28976</span>
+              <span style={{ fontSize: '14px' }}>
+                <span style={{ fontWeight: 'bold', color: '#c00' }}>N°</span>{' '}
+                <span style={{ fontWeight: 'bold', fontSize: '16px' }}>{numLic.toString().padStart(4, '0')}</span>
+              </span>
+            </div>
+
+            {/* Párrafo introductorio */}
+            <p style={{ fontSize: '15px', textAlign: 'justify', lineHeight: '1.2', margin: '0 0 10px 0' }}>
+              Visto el expediente N.°{' '}
+              <strong>{numExp}-{anioExp}MPSC/TD</strong>{' '}
+              con las constancias registradas en la solicitud y declaración jurada de cumplimiento de las
+              condiciones de seguridad de la edificación presentadas por el administrado, de acuerdo con
+              el Decreto Supremo N.° 163-2020-PCM que aprueba el Texto Único Ordenado de la Ley 28976,
+              Ley Marco de Licencia de Funcionamiento y los formatos actualizados de declaración jurada,
+              las facultades conferidas por la Ley Orgánica de Municipalidades N.° 27972 y con Resolución
+              de Gerencia N.°{' '}
+              <strong>{licencia.resolucion_numero || '-'}</strong>
+            </p>
+
+            {/* SE RESUELVE */}
+            <p style={{ textAlign: 'center', fontWeight: '900', fontSize: '16px', margin: '6px 0 6px 0'}}>
+              SE RESUELVE:
+            </p>
+
+            <p style={{ fontSize: '15px', margin: '0 0 10px 0' }}>
+              Otorgar LICENCIA DE FUNCIONAMIENTO de apertura de establecimiento a:
+            </p>
+
+            {/* ── Campos tipo formulario ── */}
+            <div style={{ fontSize: '15px', lineHeight: '2' }}>
+              <CampoFormulario etiqueta="NOMBRE O RAZÓN SOCIAL" valor={(licencia.titular_nombre || '').toUpperCase()} />
+              <CampoFormulario etiqueta="REPRESENTANTE LEGAL" valor={(licencia.conductor_nombre || '').toUpperCase()} />
+
+              {/* RUC y DNI en la misma línea */}
+              <p style={estilos.campo}>
+                <span style={estilos.etiqueta}>N.° R.U.C.: </span>
+                <span style={estilos.valor}>{licencia.titular_ruc || '-'}</span>
+                <span style={{ marginLeft: '30px' }} />
+                <span style={estilos.etiqueta}>N.° {docEtiqueta}: </span>
+                <span style={estilos.valor}>{docNumero || '-'}</span>
+              </p>
+
+              <CampoFormulario
+                etiqueta="HORARIO"
+                valor={`${formatHora12(licencia.hora_desde)} A ${formatHora12(licencia.hora_hasta)}`}
               />
-              <p style={{
-                fontWeight: '900',
-                fontSize: '22px',
-                textTransform: 'uppercase',
-                margin: 0,
-                lineHeight: '1.2',
-              }}>
-                Municipalidad Provincial de Lamas
+              <CampoFormulario etiqueta="NOMBRE COMERCIAL" valor={(licencia.nombre_comercial || '').toUpperCase()} />
+              <CampoFormulario etiqueta="GIRO COMERCIAL" valor={girosTexto} />
+              <CampoFormulario etiqueta="ACTIVIDAD" valor={(licencia.actividad || '').toUpperCase()} />
+
+              {/* Nivel de riesgo + tipo letrero en la misma línea */}
+              <p style={estilos.campo}>
+                <span style={estilos.etiqueta}>NIVEL DE RIESGO: </span>
+                <span style={estilos.valor}>{nivelRiesgoLimpio.toUpperCase()}</span>
+                {tipoLetrero && (
+                  <>
+                    <span style={{ marginLeft: '40px' }} />
+                    <span style={estilos.valor}>{tipoLetrero.toUpperCase()}.</span>
+                  </>
+                )}
               </p>
+
+              <CampoFormulario etiqueta="DIRECCIÓN" valor={(licencia.direccion || '').toUpperCase()} />
+              <CampoFormulario etiqueta="ZONIFICACIÓN" valor={(licencia.zonificacion_nombre || '').toUpperCase()} />
+              <CampoFormulario etiqueta="OBSERVACIÓN" valor={observaciones} />
             </div>
 
-            {/* ── TÍTULOS CENTRADOS ── */}
-            <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-              <p style={{ fontWeight: 'bold', fontSize: '20px', margin: '0 0 4px 0', textTransform: 'uppercase', color: colores.rojo,  paddingInline: '20px', lineHeight: '1.1' }}>
-                Certificado de Licencia Municipal de Funcionamiento
-              </p>
-              <p style={{ fontWeight: 'bold', fontSize: '12px', margin: '0 0 0px 0', paddingBottom: '0px' }}>
-                LEY Nº 28976
-              </p>
-              <p style={{ fontWeight: '800', fontSize: '18px', margin: '0 0 8px 0' }}>
-                ORDENANZA MUNICIPAL Nº 022-2010-MPL
-              </p>
-            </div>
-
-            {/* ── INTRODUCCIÓN ── */}
-            <p style={{ fontSize: '16px', textAlign: 'center', margin: '0 0 14px 0', lineHeight: '1.2',letterSpacing: '0.1px' }}>
-              EL SUBGERENTE DE COMERCIO, LICENCIAS Y CONTROL SANITARIO DE LA MUNICIPALIDAD PROVINCIAL DE LAMAS, QUE SUSCRIBE:
-            </p>
-
-            {/* ── CERTIFICA A ── */}
-            <p style={{ fontWeight: '900', fontSize: '20px', textAlign: 'center', margin: '0 0 10px 0' }}>
-              CERTIFICA A:
-            </p>
-
-            {/* ── NOMBRE COMERCIAL ── */}
-            <p style={{ fontWeight: '900', fontSize: '28px', textAlign: 'center', margin: '0 0 14px 0', textTransform: 'uppercase', lineHeight: '1.2' }}>
-              {licencia.nombre_comercial || '-'}
-            </p>
-
-            {/* ── PÁRRAFO PRINCIPAL ── */}
-            <p style={{ fontSize: '14px', textAlign: 'justify', margin: '0 0 14px 0', lineHeight: '1.2' }}>
-              Con dirección en {licencia.direccion || '-'}, distrito y provincia de Lamas, región
-              San Martín{licencia.titular_ruc ? `; con RUC N° ${licencia.titular_ruc}` : ''}, expedida
-              con Resolución Subgerencial Nº {licencia.resolucion_numero || '-'}, registrado con el
-              Código de Contribuyente Nº {licencia.numero_licencia || '-'}.
-            </p>
-
-            {/* ── PROPIETARIO / REPRESENTANTE LEGAL ── */}
-            <p style={{ fontWeight: 'bold', fontSize: '14px', margin: '0 0 4px 0', textDecoration: 'underline' }}>
-              Propietario o Representante Legal:
-            </p>
-            <p style={{ fontSize: '14px', textAlign: 'justify', margin: '6px 0 14px 0', lineHeight: '1.2' }}>
-              <strong>{licencia.conductor_nombre || '-'}</strong>
-              {docIdentidad && (
-                <> con {etiquetaDocumento(docIdentidad)} Nº {docIdentidad.numero_documento}</>
-              )}
-              {ubicacionConductor && <>, con domicilio en {ubicacionConductor}</>}
-              .
-            </p>
-
-            {/* ── ACTIVIDAD ECONÓMICA ── */}
-            <p style={{ fontWeight: 'bold', fontSize: '14px', margin: '0 0 4px 0', textDecoration: 'underline' }}>
-              Actividad Económica:
-            </p>
-            <p style={{ fontWeight: '900', fontSize: '18px', margin: '6px 0 14px 0', lineHeight: '1.2', textTransform: 'uppercase' }}>
-              {girosTexto || '-'}
-            </p>
-
-            {/* ── HABILITACIÓN ── */}
-            <p style={{ fontSize: '14px', textAlign: 'justify', margin: '0 0 16px 0', lineHeight: '1.2' }}>
-              Habiendo cumplido con los requisitos reglamentarios que exige las Disposiciones Municipales
-              vigentes, está legalmente habilitada a desarrollar su actividad económica.
-            </p>
-
-            {/* ── LUGAR Y FECHA ── */}
-            <p style={{ fontSize: '14px', textAlign: 'right', margin: '0 0 0 0', lineHeight: '1.5' }}>
-              Lamas, {formatFechaEnLetras(licencia.fecha_emision)}
+            {/* ── Fecha ── */}
+            <p style={{ fontSize: '13px', textAlign: 'center', margin: '16px 0 0 0' }}>
+              Huamachuco, <strong>{getDia(licencia.fecha_emision)}</strong> de{' '}
+              <strong>{getMes(licencia.fecha_emision)}</strong> del{' '}
+              <strong>{getAnio(licencia.fecha_emision)}</strong>.
             </p>
 
             {/* Espaciador */}
             <div style={{ flex: 1 }} />
 
-            {/* ── NOTA + QR ── */}
-            <div style={{ border: '1.5px solid #000', padding: '8px 10px', display: 'flex', gap: '10px' }}>
-              <div style={{ flex: 1, color: colores.rojo }}>
-                <p style={{ fontWeight: 'bold', fontSize: '12px', margin: '0 0 4px 0', color: '#c00', textDecoration: 'underline' }}>
-                  NOTA:
-                </p>
-                {NOTAS.map((texto, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '4px', marginBottom: '2px' }}>
-                    <span style={{ fontSize: '11px', flexShrink: 0 }}>-</span>
-                    <p style={{ margin: 0, fontSize: '11px', lineHeight: '1.4' }}>{texto}</p>
-                  </div>
-                ))}
-              </div>
-              {qrUrl && (
-                <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <QRCode value={qrUrl} size={72} level="M" />
-                  <p style={{ fontSize: '7px', margin: '3px 0 0 0', textAlign: 'center', color: '#555' }}>
-                    Verificar documento
-                  </p>
-                </div>
-              )}
+            {/* ── PIE DE PÁGINA ── */}
+            <div style={{
+              borderTop: '2px solid #8B0000',
+              paddingTop: '6px',
+              marginTop: '12px',
+            }}>
+              <p style={{
+                fontSize: '10px',
+                textAlign: 'justify',
+                lineHeight: '1.4',
+                margin: '0 0 6px 0',
+                color: '#333',
+              }}>
+                Prohibido usar la vía pública (calles y veredas), fachadas como muestrario de productos,
+                carteles, pizarras y/o avisos publicitarios sin autorización municipal. Prohibida la
+                contaminación ambiental y sonora (ruidos no permisibles).
+              </p>
+              <p style={{
+                fontSize: '11px',
+                fontWeight: 'bold',
+                textAlign: 'center',
+                margin: 0,
+                color: '#8B0000',
+                letterSpacing: '0.5px',
+              }}>
+                COLOCAR EN UN LUGAR VISIBLE DEL ESTABLECIMIENTO
+              </p>
             </div>
 
-          </div>{/* fin contenido */}
-        </div>{/* fin borde interior */}
+          </div>{/* fin cuerpo */}
         </div>{/* fin hoja A4 */}
       </div>{/* fin fondo gris */}
     </>
