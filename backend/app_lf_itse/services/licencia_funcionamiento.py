@@ -75,6 +75,7 @@ SELECT
     lf.fecha_notificacion,
     lf.usuario_id,
     lf.fecha_digitacion,
+    lf.tipo_letrero_id,
     e.numero_expediente,
     e.fecha_recepcion,
     TRIM(
@@ -95,6 +96,7 @@ SELECT
     tl.nombre  AS tipo_licencia_nombre,
     z.nombre   AS zonificacion_nombre,
     nr.nombre  AS nivel_riesgo_nombre,
+    tle.nombre AS tipo_letrero_nombre,
     tconductor.direccion AS conductor_direccion,
     tconductor.distrito AS conductor_distrito,
     tconductor.provincia AS conductor_provincia,
@@ -131,6 +133,8 @@ LEFT JOIN zonificaciones z
     ON lf.zonificacion_id = z.id
 LEFT JOIN niveles_riesgo nr
     ON lf.nivel_riesgo_id = nr.id
+LEFT JOIN tipos_letrero tle
+    ON lf.tipo_letrero_id = tle.id
 {where}
 ORDER BY lf.numero_licencia DESC
 """
@@ -492,6 +496,7 @@ def crear_licencia(data: dict, usuario) -> LicenciaFuncionamiento:
             numero_recibo_pago    = data['numero_recibo_pago'],
             observaciones         = data.get('observaciones'),
             se_puede_publicar     = data.get('se_puede_publicar', False),
+            tipo_letrero_id       = data['tipo_letrero_id'],
             usuario               = usuario,
             fecha_digitacion      = timezone.now(),
         )
@@ -589,6 +594,7 @@ def modificar_licencia(licencia_id: int, data: dict, usuario=None) -> LicenciaFu
         licencia.numero_recibo_pago     = data['numero_recibo_pago']
         licencia.observaciones          = data.get('observaciones')
         licencia.se_puede_publicar      = data.get('se_puede_publicar', False)
+        licencia.tipo_letrero_id        = data['tipo_letrero_id']
         licencia.save()
 
         # Reemplaza completamente los giros asociados
@@ -843,6 +849,7 @@ SELECT
     lf.fecha_notificacion,
     lf.usuario_id,
     lf.fecha_digitacion,
+    lf.tipo_letrero_id,
 
     td.titular_documentos_concatenados,
     cd.conductor_documentos_concatenados,
@@ -884,6 +891,8 @@ SELECT
 
     nr.nombre AS nivel_riesgo_nombre,
 
+    tle.nombre AS tipo_letrero_nombre,
+
     CASE
         WHEN li.licencia_funcionamiento_id IS NULL THEN TRUE
         ELSE FALSE
@@ -908,6 +917,9 @@ LEFT JOIN zonificaciones z
 
 LEFT JOIN niveles_riesgo nr
     ON lf.nivel_riesgo_id = nr.id
+
+LEFT JOIN tipos_letrero tle
+    ON lf.tipo_letrero_id = tle.id
 
 LEFT JOIN (
     SELECT DISTINCT
@@ -1344,6 +1356,8 @@ SELECT
     licencias_funcionamiento.fecha_notificacion,
     licencias_funcionamiento.usuario_id,
     licencias_funcionamiento.fecha_digitacion,
+    licencias_funcionamiento.tipo_letrero_id,
+    tipos_letrero.nombre AS tipo_letrero_nombre,
     expedientes.numero_expediente,
     expedientes.fecha_recepcion,
     tipos_procedimiento_tupa.nombre AS tipos_procedimiento_tupa_nombre,
@@ -1382,6 +1396,8 @@ LEFT JOIN personas AS TTitular
     ON licencias_funcionamiento.titular_id = TTitular.id
 LEFT JOIN personas AS TConductor
     ON licencias_funcionamiento.conductor_id = TConductor.id
+LEFT JOIN tipos_letrero
+    ON licencias_funcionamiento.tipo_letrero_id = tipos_letrero.id
 LEFT JOIN (
     SELECT DISTINCT licencias_funcionamiento_estados.licencia_funcionamiento_id
     FROM licencias_funcionamiento_estados
