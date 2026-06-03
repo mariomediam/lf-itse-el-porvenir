@@ -440,6 +440,8 @@ export default function ReporteLicenciasPage() {
                                       ? `${formatFecha(lic.fecha_inicio_vigencia)} - ${formatFecha(lic.fecha_fin_vigencia)}`
                                       : '',
       'Estado':                   lic.esta_activo ? 'Activa' : 'Inactiva',
+      'Tipo de letrero':          lic.tipo_letrero_nombre || '',
+      'Monto TUPA':               lic.tipos_procedimiento_tupa_monto || '',
     }))
 
     const ws = XLSX.utils.json_to_sheet(datos)

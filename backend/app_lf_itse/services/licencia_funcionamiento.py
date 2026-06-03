@@ -859,6 +859,7 @@ SELECT
     e.fecha_recepcion,
 
     tpt.nombre AS tipos_procedimiento_tupa_nombre,
+    tpt.monto AS tipos_procedimiento_tupa_monto,
 
     TRIM(CONCAT(
         COALESCE(tt.apellido_paterno, ''), ' ',
