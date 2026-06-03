@@ -7,6 +7,12 @@ from . import models
 User = get_user_model()
 
 
+class TipoLetreroSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.TipoLetrero
+        fields = '__all__'
+
+
 class UnidadOrganicaSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.UnidadOrganica

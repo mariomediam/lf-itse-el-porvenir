@@ -53,6 +53,7 @@ from .serializers import (
     LicenciasFuncionamientoConsultaQuerySerializer,
     LicenciasFuncionamientoReporteQuerySerializer,
     NivelRiesgoSerializer,
+    TipoLetreroSerializer,
     TipoLicenciaSerializer,
     UnidadOrganicaSerializer,
     ZonificacionSerializer,
@@ -130,6 +131,7 @@ from .services.giro import (
     obtener_giro,
 )
 from .services.nivel_riesgo import listar_niveles_riesgo
+from .services.tipo_letrero import listar_tipos_letrero
 from .services.tipo_licencia import listar_tipos_licencia
 from .services.unidad_organica import listar_unidades_organicas
 from .services.zonificacion import (
@@ -2309,6 +2311,66 @@ class ItsePorRenovarView(APIView):
 
         except Exception as e:
             logger.exception('Error al listar ITSE por renovar')
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class TipoLetreroListView(APIView):
+    """
+    GET /api/lf-itse/tipos-letrero/
+
+    Retorna los tipos de letrero ordenados por id.
+
+    Parámetros de query string
+    --------------------------
+    id : int  (opcional)
+        Filtra por el id exacto del tipo de letrero.
+    esta_activo : str  (opcional)
+        'true'  → solo activos.
+        'false' → solo inactivos.
+        Si se omite se devuelven todos.
+
+    Requiere autenticación JWT.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            # Filtro por id
+            id_param = request.query_params.get('id', '').strip()
+            id_value = None
+            if id_param:
+                try:
+                    id_value = int(id_param)
+                except (ValueError, TypeError):
+                    return Response(
+                        {'error': "El parámetro 'id' debe ser un número entero."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            # Filtro por esta_activo
+            activo_param = request.query_params.get('esta_activo', '').strip().lower()
+            if activo_param == 'true':
+                esta_activo = True
+            elif activo_param == 'false':
+                esta_activo = False
+            elif activo_param == '':
+                esta_activo = None
+            else:
+                return Response(
+                    {'error': "El parámetro 'esta_activo' debe ser 'true' o 'false'."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            tipos = listar_tipos_letrero(id=id_value, esta_activo=esta_activo)
+            serializer = TipoLetreroSerializer(tipos, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.exception('Error al listar tipos de letrero')
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -65,6 +65,7 @@ from .views import (
     ReniecConsultarView,
     SunatConsultarView,
     TipoDocumentoIdentidadListView,
+    TipoLetreroListView,
     TipoProcedimientoTupaDetailView,
     TipoProcedimientoTupaListView,
     UnidadOrganicaListView,
@@ -152,6 +153,9 @@ urlpatterns = [
 
     # Unidades orgánicas
     path('unidades-organicas/', UnidadOrganicaListView.as_view(), name='unidad-organica-list'),
+
+    # Tipos de letrero
+    path('tipos-letrero/', TipoLetreroListView.as_view(), name='tipo-letrero-list'),
 
     # Tipos de procedimiento TUPA
     path('tipos-procedimiento-tupa/', TipoProcedimientoTupaListView.as_view(), name='tipo-procedimiento-tupa-list'),
