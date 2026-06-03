@@ -6,11 +6,6 @@ import { configPublicaApi } from '@api/configPublicaApi'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const MESES = [
-  'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
-  'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE',
-]
-
 const NOTAS = [
   'DE ACUERDO A LO ESTABLECIDO EN EL REGLAMENTO DE INSPECCIONES TÉCNICAS DE SEGURIDAD EN EDIFICACIONES APROBADO POR DECRETO SUPREMO N° 002-2018 PCM, EL PRESENTE CERTIFICADO DEBERÁ SER FIRMADO POR EL RESPONSABLE DEL ÓRGANO EJECUTANTE.',
   'ESTE CERTIFICADO DEBERÁ COLOCARSE EN UN LUGAR VISIBLE DENTRO DEL ESTABLECIMIENTO OBJETO DE INSPECCIÓN.',
@@ -28,20 +23,70 @@ const formatFecha = (fechaStr) => {
   return `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`
 }
 
-const formatFechaLarga = (fechaStr) => {
-  if (!fechaStr) return '-'
-  const d = new Date(fechaStr)
-  return `${d.getUTCDate()} DE ${MESES[d.getUTCMonth()]} DE ${d.getUTCFullYear()}`
-}
-
 const calcularVigencia = (fechaInicio, fechaFin) => {
   if (!fechaInicio || !fechaFin) return '-'
-  const ms = new Date(fechaFin) - new Date(fechaInicio)
-  const anios = Math.round(ms / (365.25 * 24 * 60 * 60 * 1000))
-  if (anios >= 1) return `${anios} ${anios === 1 ? 'AÑO' : 'AÑOS'}`
-  const meses = Math.round(ms / (30 * 24 * 60 * 60 * 1000))
+  const inicio = new Date(fechaInicio)
+  const fin = new Date(fechaFin)
+  const meses = (fin.getUTCFullYear() - inicio.getUTCFullYear()) * 12
+    + (fin.getUTCMonth() - inicio.getUTCMonth())
+  if (meses >= 12) {
+    const anios = Math.round(meses / 12)
+    return `${anios} ${anios === 1 ? 'AÑO' : 'AÑOS'}`
+  }
   return `${meses} ${meses === 1 ? 'MES' : 'MESES'}`
 }
+
+// ── Número a letras (español) ─────────────────────────────────────────────────
+
+const UNIDADES = ['', 'UN', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE']
+const ESPECIALES = ['DIEZ', 'ONCE', 'DOCE', 'TRECE', 'CATORCE', 'QUINCE']
+const DECENAS_PREFIX = ['', '', 'VEINTI', 'TREINTA', 'CUARENTA', 'CINCUENTA', 'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA']
+const CENTENAS = ['', 'CIENTO', 'DOSCIENTOS', 'TRESCIENTOS', 'CUATROCIENTOS', 'QUINIENTOS', 'SEISCIENTOS', 'SETECIENTOS', 'OCHOCIENTOS', 'NOVECIENTOS']
+
+function numeroALetras(n) {
+  if (n == null || isNaN(n)) return ''
+  n = Math.floor(Math.abs(n))
+  if (n === 0) return 'CERO'
+  if (n === 100) return 'CIEN'
+
+  let resultado = ''
+
+  if (n >= 1000) {
+    const miles = Math.floor(n / 1000)
+    resultado += miles === 1 ? 'MIL' : `${numeroALetras(miles)} MIL`
+    n %= 1000
+    if (n > 0) resultado += ' '
+  }
+
+  if (n >= 100) {
+    resultado += CENTENAS[Math.floor(n / 100)]
+    n %= 100
+    if (n > 0) resultado += ' '
+  }
+
+  if (n >= 10 && n <= 15) {
+    resultado += ESPECIALES[n - 10]
+  } else if (n >= 16 && n <= 19) {
+    resultado += `DIECI${UNIDADES[n - 10]}`
+  } else if (n >= 20 && n <= 29 && n !== 20) {
+    resultado += `VEINTI${UNIDADES[n - 20]}`
+  } else if (n === 20) {
+    resultado += 'VEINTE'
+  } else if (n >= 30) {
+    resultado += DECENAS_PREFIX[Math.floor(n / 10)]
+    const u = n % 10
+    if (u > 0) resultado += ` Y ${UNIDADES[u]}`
+  } else if (n >= 1) {
+    resultado += UNIDADES[n]
+  }
+
+  return resultado
+}
+
+// ── Colores ───────────────────────────────────────────────────────────────────
+
+const AZUL = '#2E5495'
+const NARANJA = '#FE9900'
 
 // ── Página principal ──────────────────────────────────────────────────────────
 
@@ -109,11 +154,13 @@ const ItseImprimirPage = () => {
 
   // ── Datos calculados ────────────────────────────────────────────────────────
   const anioItse = getAnio(itse.fecha_expedicion)
-  const girosTexto = giros.map((g) => g.nombre).join(', ')
-  const expedienteNum = itse.numero_expediente
-    ? `${String(itse.numero_expediente).padStart(4, '0')} - ${getAnio(itse.fecha_recepcion)}`
+  const girosTexto = giros.map((g) => g.nombre).join(', ').toUpperCase()
+  const numExp = itse.numero_expediente
+    ? `${itse.numero_expediente} - ${getAnio(itse.fecha_recepcion)} - TD`
     : '-'
   const vigencia = calcularVigencia(itse.fecha_expedicion, itse.fecha_caducidad)
+  const aforo = itse.capacidad_aforo ?? 0
+  const aforoLetras = numeroALetras(aforo)
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
@@ -154,20 +201,22 @@ const ItseImprimirPage = () => {
       {/* Fondo gris */}
       <div className="fondo-gris-itse" style={{ backgroundColor: '#d1d5db', minHeight: '100vh', paddingTop: '32px', paddingBottom: '32px' }}>
 
-        {/* Hoja A4 */}
+        {/* Hoja A4 — borde exterior azul */}
         <div className="hoja-a4-itse" style={{
           width: '210mm',
           height: '297mm',
           margin: '0 auto',
           backgroundColor: '#ffffff',
-          padding: '8mm',
+          border: `15px solid ${AZUL}`,
+          padding: '0mm',
           boxSizing: 'border-box',
           fontFamily: 'Arial, sans-serif',
           color: '#000000',
         }}>
-        {/* Borde interior anaranjado */}
+
+        {/* Borde interior naranja */}
         <div style={{
-          border: '4px solid #F89544',
+          border: `10px solid ${NARANJA}`,
           height: '100%',
           padding: '6mm 10mm',
           boxSizing: 'border-box',
@@ -175,138 +224,163 @@ const ItseImprimirPage = () => {
           flexDirection: 'column',
         }}>
 
-          {/* ── ENCABEZADO: logos ── */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <img src="/images/logo-itse1.jpg" alt="Logo ITSE 1"
-              style={{ height: '90px', width: 'auto', flexShrink: 0 }}
-              onError={(e) => { e.target.style.display = 'none' }} />
-            <img src="/images/logo-itse2.jpg" alt="Logo ITSE 2"
-              style={{ height: '90px', width: 'auto', flexShrink: 0 }}
-              onError={(e) => { e.target.style.display = 'none' }} />
-          </div>
+          {/* ── ENCABEZADO: escudo + título ── */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginLeft: '-8mm', marginTop: '-4mm' }}>
+            <img
+              src="/images/escudo-muni.png"
+              alt="Escudo Municipalidad"
+              style={{ height: '100px', width: 'auto', flexShrink: 0 }}
+              onError={(e) => { e.target.style.display = 'none' }}
+            />
+            <p style={{
+              fontWeight: 'bold',
+              fontSize: '15px',
+              margin: '15px 0 0 0',
+              lineHeight: '1.4',
+              textTransform: 'uppercase',
+              textAlign: 'center',
+              flex: 1,
 
-          {/* ── TÍTULO CERTIFICADO ── */}
-          <div style={{ textAlign: 'center', marginBottom: '6px' }}>
-            <p style={{ fontWeight: 'bold', fontSize: '17px', margin: '0 0 4px 0', lineHeight: '1.5', textTransform: 'uppercase' }}>
-              Certificado de Inspección Técnica de Seguridad en Edificaciones para Establecimientos Objeto de Inspección Clasificados
-            </p>
-            <p style={{ fontWeight: 'bold', fontSize: '19px', margin: '0 0 4px 0', textTransform: 'uppercase' }}>
-              Con Nivel de{' '}
-              <span style={{ fontSize: '28px', color: "#FB0200" }}>{itse.nivel_riesgo_nombre || ''}</span>
+            }}>
+              CERTIFICADO DE INSPECCIÓN TÉCNICA DE SEGURIDAD EN EDIFICACIONES PARA
+              ESTABLECIMIENTOS OBJETO DE INSPECCIÓN CLASIFICADOS CON NIVEL DE{' '}
+              
+                {(itse.nivel_riesgo_nombre || '').toUpperCase()}
+              
+                {' '} SEGÚN LA MATRIZ DE RIESGOS
             </p>
           </div>
 
           {/* ── N° ITSE ── */}
-          <p style={{ fontWeight: 'bold', fontSize: '18px', textAlign: 'center', margin: '0 0 10px 0', letterSpacing: '1px' }}>
-            Nº. {itse.numero_itse} - {anioItse}
+          <p style={{
+            fontWeight: 'bold',
+            fontSize: '18px',
+            textAlign: 'center',
+            margin: '-12px 0 10px 0',
+            textDecoration: 'underline',
+          }}>
+            N° {itse.numero_itse}
           </p>
 
           {/* ── PÁRRAFO INTRODUCTORIO ── */}
-          <p style={{ fontSize: '12px', textAlign: 'justify', margin: '0 0 8px 0', lineHeight: '1.6' }}>
-            El Órgano Ejecutante de la Municipalidad Provincial Sánchez Carrión, en cumplimiento de lo establecido en el D.S. Nº 002-2018-PCM, ha realizado la Inspección Técnica de Seguridad en Edificaciones al Establecimiento Objeto de Inspección:
+          <p style={{ fontSize: '13px', textAlign: 'justify', margin: '0 0 6px 0', lineHeight: '1.9' }}>
+            El Órgano Ejecutante de la Municipalidad Provincial Sánchez Carrión, en cumplimiento
+            de lo establecido en el D.S. Nº 002-2018-PCM, ha realizado la Inspección Técnica de
+            Seguridad en Edificaciones al Establecimiento Objeto de Inspección:
           </p>
 
           {/* ── NOMBRE COMERCIAL ── */}
-          <p style={{ fontWeight: 'bold', fontSize: '20px', textAlign: 'center', margin: '0 0 10px 0', textTransform: 'uppercase' }}>
-            "{itse.nombre_comercial || '-'}"
+          <p style={{
+            fontWeight: 'bold',
+            fontSize: '24px',
+            textAlign: 'center',
+            margin: '4px 0 14px 0',
+            textTransform: 'uppercase',
+            lineHeight: '1.3',
+          }}>
+            {itse.nombre_comercial || '-'}
           </p>
 
           {/* ── UBICACIÓN ── */}
-          <p style={{ fontSize: '16px', margin: '0 0 0px 0', lineHeight: '1.5', fontWeight: 'bold' }}>
-            Ubicado en :&nbsp;&nbsp;&nbsp;&nbsp;{itse.direccion || '-'}
-          </p>
-          <p style={{ fontSize: '12px', margin: '0 0 8px 0', lineHeight: '1.5', fontWeight: 'bold' }}>
-            Distrito de Pinto Recodo - Provincia Sánchez Carrión - Departamento San Martín
+          <p style={{ fontSize: '13px', margin: '0 0 8px 0', lineHeight: '1.7' }}>
+            Ubicado en el <strong>{itse.direccion || '-'}</strong>,
+            Distrito <strong>Huamachuco</strong>,
+            Provincia <strong>Sánchez Carrión</strong>,
+            Departamento <strong>La Libertad</strong>.
           </p>
 
           {/* ── SOLICITADO POR ── */}
-          <p style={{ fontSize: '16px', margin: '8px 0 8px 0', lineHeight: '1.5', fontWeight: 'bold' }}>
-            Solicitado por:&nbsp;&nbsp;&nbsp;&nbsp;{itse.titular_nombre || itse.conductor_nombre || '-'}
+          <p style={{ fontSize: '13px', margin: '0 0 8px 0', lineHeight: '1.7' }}>
+            Solicitado por: <strong>{(itse.titular_nombre || '-').toUpperCase()}</strong>
           </p>
 
           {/* ── CERTIFICA ── */}
-          <p style={{ fontSize: '13px', textAlign: 'justify', margin: '0 0 8px 0', lineHeight: '1.6' }}>
-            El que suscribe <strong><em>CERTIFICA</em></strong> que el Establecimiento Objeto de Inspección antes señalado{' '}
-            <strong><em>CUMPLE</em></strong>{' '}
-            CON LAS CONDICIONES DE SEGURIDAD.
+          <p style={{ fontSize: '13px', textAlign: 'justify', margin: '0 0 8px 0', lineHeight: '1.7' }}>
+            El que suscribe <strong><em>CERTIFICA</em></strong> que el Establecimiento Objeto de
+            Inspección antes señalado <strong>CUMPLE CON LAS CONDICIONES DE SEGURIDAD</strong>.
           </p>
 
           {/* ── CAPACIDAD ── */}
-          <p style={{ fontSize: '16px', margin: '0 0 6px 0', lineHeight: '1.5' }}>
-            <strong>Capacidad Máxima de la Edificación: ({itse.capacidad_aforo ?? '-'}) personas</strong>
+          <p style={{ fontSize: '13px', margin: '0 0 8px 0', lineHeight: '1.7' }}>
+            Capacidad Máxima de la Edificación:{' '}
+            <strong>{aforo} ({aforoLetras}) Personas</strong>
+          </p>
+
+          {/* ── ÁREA ── */}
+          <p style={{ fontSize: '13px', margin: '0 0 8px 0', lineHeight: '1.7' }}>
+            Área: <strong>{itse.area != null ? `${Number(itse.area).toFixed(2)}` : '-'} m²</strong>
           </p>
 
           {/* ── GIRO ── */}
-          <div style={{ display: 'flex', gap: '6px', marginBottom: '6px', alignItems: 'baseline' }}>
-            <p style={{ fontSize: '16px', margin: 0, flexShrink: 0 }}><strong>Giro o actividad:</strong></p>
-            <p style={{ fontSize: '14px', margin: 0, fontWeight: 'bold', lineHeight: '1.5' }}>
-              {girosTexto || '-'}
+          <p style={{ fontSize: '13px', margin: '0 0 8px 0', lineHeight: '1.7' }}>
+            Giro o actividad: <strong>{girosTexto || '-'}</strong>
+          </p>
+
+          {/* ── EXPEDIENTE + RESOLUCIÓN ── */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+            <p style={{ margin: 0, lineHeight: '1.7' }}>
+              Expediente Nº: <strong>{numExp}</strong>
+            </p>
+            <p style={{ margin: '0 20px 0 0', lineHeight: '1.7' }}>
+              Resolución N°: <strong>{itse.resolucion_numero || '-'}</strong>
             </p>
           </div>
 
-          {/* ── EXPEDIENTE ── */}
-          <div style={{ display: 'flex', gap: '6px', marginBottom: '4px', alignItems: 'baseline', fontWeight: 'bold' }}>
-            <p style={{ fontSize: '16px', margin: 0, minWidth: '100px' }}>Expediente Nº :</p>
-            <p style={{ fontSize: '16px', margin: 0 }}>{expedienteNum}</p>
-          </div>
-
-          {/* ── RESOLUCIÓN ── */}
-          <div style={{ display: 'flex', gap: '6px', marginBottom: '6px', alignItems: 'baseline', fontWeight: 'bold' }}>
-            <p style={{ fontSize: '16px', margin: 0, minWidth: '100px' }}>Resolución N° :</p>
-            <p style={{ fontSize: '16px', margin: 0, fontWeight: 'bold' }}>{itse.resolucion_numero || '-'}</p>
-          </div>
-
           {/* ── VIGENCIA ── */}
-          <p style={{ fontSize: '16px', margin: '0 0 4px 0', fontWeight: 'bold', textTransform: 'uppercase' }}>
+          <p style={{ fontSize: '13px', margin: '0 0 8px 0', lineHeight: '1.7', fontWeight: 'bold'}}>
             VIGENCIA: {vigencia}*
           </p>
 
-          {/* ── LUGAR Y FECHA ── */}
-          <p style={{ fontSize: '16px', textAlign: 'right', margin: '0 0 10px 0', fontWeight: 'bold' }}>
-            SÁNCHEZ CARRIÓN, {formatFechaLarga(itse.fecha_expedicion)}
-          </p>
-
-          {/* ── FECHAS ── */}
-          <div style={{ marginBottom: '6px' }}>
-            <div style={{ display: 'flex', gap: '6px', marginBottom: '2px' }}>
-              <p style={{ fontSize: '14px', margin: 0, fontWeight: 'bold', minWidth: '300px' }}>FECHA DE EXPEDICIÓN</p>
-              <p style={{ fontSize: '14px', margin: 0 }}>: {formatFecha(itse.fecha_expedicion)}</p>
-            </div>
-            <div style={{ display: 'flex', gap: '6px', marginBottom: '2px' }}>
-              <p style={{ fontSize: '14px', margin: 0, fontWeight: 'bold', minWidth: '300px' }}>FECHA DE SOLICITUD DE RENOVACIÓN</p>
-              <p style={{ fontSize: '14px', margin: 0 }}>: {formatFecha(itse.fecha_solicitud_renovacion)}</p>
-            </div>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <p style={{ fontSize: '14px', margin: 0, fontWeight: 'bold', minWidth: '300px' }}>FECHA DE CADUCIDAD</p>
-              <p style={{ fontSize: '14px', margin: 0 }}>: {formatFecha(itse.fecha_caducidad)}</p>
+          
+          {/* ── LUGAR Y FECHAS ── */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px', marginBottom: '10px' }}>
+            <div style={{ fontSize: '13px', lineHeight: '1.8' }}>
+              <div style={{ display: 'flex' }}>
+                <span style={{ minWidth: '260px' }}>LUGAR</span>
+                <span>: <strong>HUAMACHUCO</strong></span>
+              </div>
+              <div style={{ display: 'flex' }}>
+                <span style={{ minWidth: '260px' }}>FECHA DE EXPEDICIÓN</span>
+                <span>: <strong>{formatFecha(itse.fecha_expedicion)}</strong></span>
+              </div>
+              <div style={{ display: 'flex' }}>
+                <span style={{ minWidth: '260px' }}>FECHA DE SOLICITUD DE RENOVACIÓN</span>
+                <span>: <strong>{formatFecha(itse.fecha_solicitud_renovacion)}</strong></span>
+              </div>
+              <div style={{ display: 'flex' }}>
+                <span style={{ minWidth: '260px' }}>FECHA DE CADUCIDAD</span>
+                <span>: <strong>{formatFecha(itse.fecha_caducidad)}</strong></span>
+              </div>
             </div>
           </div>
 
           {/* Espaciador */}
           <div style={{ flex: 1 }} />
 
-          {/* ── PIE: NOTA + QR ── */}
-          <div style={{ borderTop: '1px solid #000', paddingTop: '6px', display: 'flex', gap: '10px' }}>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: '8px', margin: '0 0 4px 0', lineHeight: '1.4' }}>
-                *El presente Certificado de ITSE no constituye autorización alguna para el funcionamiento del Establecimiento Objeto de Inspección o para el inicio de la actividad
+
+          {/* ── QR ── */}
+          {qrUrl && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'end', marginBottom: '8px' }}>
+              <QRCode value={qrUrl} size={68} level="M" />
+              <p style={{ fontSize: '7px', margin: '3px 0 0 0', textAlign: 'center', color: '#555' }}>
+                Verificar documento
               </p>
-              <p style={{ fontWeight: 'bold', fontSize: '8px', margin: '0 0 3px 0' }}>NOTA:</p>
-              {NOTAS.map((texto, i) => (
-                <div key={i} style={{ display: 'flex', gap: '4px', marginBottom: '1px' }}>
-                  <span style={{ fontSize: '7.5px', flexShrink: 0 }}>-</span>
-                  <p style={{ margin: 0, fontSize: '7.5px', lineHeight: '1.3', textTransform: 'uppercase' }}>{texto}</p>
-                </div>
-              ))}
             </div>
-            {qrUrl && (
-              <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <QRCode value={qrUrl} size={68} level="M" />
-                <p style={{ fontSize: '7px', margin: '3px 0 0 0', textAlign: 'center', color: '#555' }}>
-                  Verificar documento
-                </p>
+          )}
+
+          {/* ── PIE DE PÁGINA ── */}
+          <div style={{ paddingTop: '5px' }}>
+            <p style={{ fontSize: '8px', margin: '0 0 4px 0', lineHeight: '1.3', fontStyle: 'italic' }}>
+              *El presente Certificado de ITSE no constituye autorización alguna para el
+              funcionamiento del Establecimiento Objeto de Inspección o para el inicio de la actividad
+            </p>
+            <p style={{ fontWeight: 'bold', fontSize: '8px', margin: '0 0 2px 0', textDecoration: 'underline' }}>NOTA:</p>
+            {NOTAS.map((texto, i) => (
+              <div key={i} style={{ display: 'flex', gap: '3px', marginBottom: '1px' }}>
+                <span style={{ fontSize: '9px', flexShrink: 0 }}>-</span>
+                <p style={{ margin: 0, fontSize: '8px', lineHeight: '1.3', textTransform: 'uppercase' }}>{texto}</p>
               </div>
-            )}
+            ))}
           </div>
 
         </div>{/* fin borde interior */}
