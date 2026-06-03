@@ -6,6 +6,16 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
+class TipoLetrero(models.Model):
+    codigo           = models.CharField(max_length=20, unique=True)
+    nombre           = models.CharField(max_length=100)
+    esta_activo      = models.BooleanField(default=True)
+    
+    class Meta:
+        db_table = 'tipos_letrero'
+
+    def __str__(self):
+        return self.nombre
 
 class UnidadOrganica(models.Model):
     codigo = models.CharField(max_length=50, unique=True)
@@ -408,7 +418,12 @@ class LicenciaFuncionamiento(models.Model):
         db_column='usuario_id',
         related_name='licencias_funcionamiento_digitadas',
     )
-    fecha_digitacion = models.DateTimeField()
+    fecha_digitacion = models.DateTimeField(),
+    tipo_letrero = models.ForeignKey(
+        TipoLetrero,
+        on_delete=models.PROTECT,
+        db_column='tipo_letrero_id',
+    )
 
     class Meta:
         db_table = 'licencias_funcionamiento'
@@ -772,6 +787,9 @@ class FeriadoRecurrente(models.Model):
 
     def __str__(self):
         return f'{self.dia:02d}/{self.mes:02d}'
+
+
+
 
 
 # ── Registro de auditoría ──────────────────────────────────────────────────────
