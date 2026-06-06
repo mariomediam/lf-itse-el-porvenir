@@ -302,6 +302,13 @@ export default function PersonaFormModal({ isOpen, onClose, onSuccess, persona =
         distrito: String(m.desc_dist?.$ ?? '').trim(),
       }))
       toast.success('Datos obtenidos de SUNAT')
+
+      if (m.esActivo?.$ === false || m.esActivo?.$ === 'false') {
+        const estado = String(m.desc_estado?.$ ?? 'INACTIVO').trim()
+        setTimeout(() => {
+          toast.warning(`El contribuyente se encuentra: ${estado}`, { duration: 8000 })
+        }, 300)
+      }
     } catch {
       toast.error('No se pudo consultar SUNAT. Ingrese los datos manualmente.')
     } finally {
