@@ -3740,7 +3740,7 @@ class VerificarLicenciaPublicaView(APIView):
             'area': f'{licencia.area} m²' if licencia.area is not None else '-',
             'giros': giros,
             'activa': activa,
-            'mensaje': 'Documento registrado en la Municipalidad Provincial Sánchez Carrión.',
+            'mensaje': 'Documento registrado en la Municipalidad Distrital de El Porvenir.',
         })
 
 
@@ -3803,5 +3803,5 @@ class VerificarItsePublicaView(APIView):
             'capacidad_aforo': itse.capacidad_aforo,
             'giros': giros,
             'activa': activa,
-            'mensaje': 'Documento registrado en la Municipalidad Provincial Sánchez Carrión.',
+            'mensaje': 'Documento registrado en la Municipalidad Distrital de El Porvenir.',
         })

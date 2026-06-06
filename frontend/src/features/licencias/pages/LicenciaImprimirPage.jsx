@@ -222,7 +222,7 @@ const LicenciaImprimirPage = () => {
           {/* ── HEADER (imagen) ── */}
           <img
             src="/images/header-lf.png"
-            alt="Encabezado Municipalidad Provincial Sánchez Carrión"
+            alt="Encabezado Municipalidad Distrital de El Porvenir"
             style={{ width: '100%', display: 'block' }}
             onError={(e) => { e.target.style.display = 'none' }}
           />

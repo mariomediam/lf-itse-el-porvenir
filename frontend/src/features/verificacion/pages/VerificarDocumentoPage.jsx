@@ -74,7 +74,7 @@ const VerificarDocumentoPage = ({ tipo }) => {
             />
           </div>
           <p style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 4px 0', textTransform: 'uppercase' }}>
-            Municipalidad Provincial Sánchez Carrión
+            Municipalidad Distrital de El Porvenir
           </p>
           <p style={{ fontSize: '13px', margin: 0, opacity: 0.9 }}>
             Verificación de {config.titulo}
@@ -246,7 +246,7 @@ const VerificarDocumentoPage = ({ tipo }) => {
           textAlign: 'center',
         }}>
           <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af' }}>
-            Municipalidad Provincial Sánchez Carrión
+            Municipalidad Distrital de El Porvenir
           </p>
         </div>
       </div>

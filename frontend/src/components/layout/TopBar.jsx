@@ -87,7 +87,7 @@ export default function TopBar({ onToggleSidebar }) {
           </button>
           <div>
             <p className="text-xs font-medium opacity-75 leading-none">
-              Municipalidad Provincial Sánchez Carrión
+               Municipalidad Distrital de El Porvenir
             </p>
             <p className="text-sm font-semibold leading-tight mt-0.5">
               Sistema de Gestión de Licencias de Funcionamiento e ITSE

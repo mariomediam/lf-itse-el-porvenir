@@ -264,7 +264,7 @@ const ItseImprimirPage = () => {
 
           {/* ── PÁRRAFO INTRODUCTORIO ── */}
           <p style={{ fontSize: '13px', textAlign: 'justify', margin: '0 0 6px 0', lineHeight: '1.9' }}>
-            El Órgano Ejecutante de la Municipalidad Provincial Sánchez Carrión, en cumplimiento
+            El Órgano Ejecutante de la Municipalidad Distrital de El Porvenir, en cumplimiento
             de lo establecido en el D.S. Nº 002-2018-PCM, ha realizado la Inspección Técnica de
             Seguridad en Edificaciones al Establecimiento Objeto de Inspección:
           </p>
@@ -285,7 +285,7 @@ const ItseImprimirPage = () => {
           <p style={{ fontSize: '13px', margin: '0 0 8px 0', lineHeight: '1.7' }}>
             Ubicado en el <strong>{itse.direccion || '-'}</strong>,
             Distrito <strong>Huamachuco</strong>,
-            Provincia <strong>Sánchez Carrión</strong>,
+            Provincia <strong>El Porvenir</strong>,
             Departamento <strong>La Libertad</strong>.
           </p>
 
