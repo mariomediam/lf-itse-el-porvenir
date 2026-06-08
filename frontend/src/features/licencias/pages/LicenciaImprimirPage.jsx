@@ -166,7 +166,7 @@ const LicenciaImprimirPage = () => {
           width: '240mm',
           height: '160mm',
           margin: '0 auto',
-          backgroundColor: '#f5e6b8',
+          backgroundColor: '#fff',
           boxSizing: 'border-box',
           fontFamily: 'Arial, sans-serif',
           color: '#4a2000',
@@ -183,11 +183,12 @@ const LicenciaImprimirPage = () => {
 
               {/* Número de licencia */}
               <div style={{
-                border: '1.5px solid #4a2000',
+                border: '3.5px solid #4a2000',
                 padding: '2mm 5mm',
                 fontSize: '16px',
                 fontWeight: 'bold',
-                marginTop: '3mm',
+                marginTop: '15mm',
+                marginLeft: '43mm',
               }}>
                 {numLic}
               </div>
@@ -195,7 +196,7 @@ const LicenciaImprimirPage = () => {
               {/* Expediente + Vencimiento */}
               <div style={{ textAlign: 'right' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3mm', marginBottom: '3mm' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 'bold' }}>EXPEDIENTE N°</span>
+                  
                   <span style={{
                     border: '1px solid #4a2000',
                     padding: '1.5mm 4mm',
@@ -203,12 +204,14 @@ const LicenciaImprimirPage = () => {
                     fontWeight: 'bold',
                     minWidth: '25mm',
                     textAlign: 'center',
+                    marginTop: '11mm',
+                    marginRight: '18mm',
                   }}>
                     {numExp}
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3mm' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 'bold' }}>FECHA DE VENCIMIENTO</span>
+                  
                   <span style={{
                     border: '1px solid #4a2000',
                     padding: '1.5mm 4mm',
@@ -216,6 +219,8 @@ const LicenciaImprimirPage = () => {
                     fontWeight: 'bold',
                     minWidth: '25mm',
                     textAlign: 'center',
+                    marginTop: '1mm',
+                    marginRight: '18mm',
                   }}>
                     {vencimiento}
                   </span>
@@ -226,9 +231,9 @@ const LicenciaImprimirPage = () => {
             {/* ── TÍTULO ── */}
             <h1 style={{
               textAlign: 'center',
-              fontSize: '15px',
+              fontSize: '18px',
               fontWeight: 'bold',
-              margin: '5mm 0 1mm 0',
+              margin: '5mm 0 0 0',
               letterSpacing: '0.5px',
             }}>
               CERTIFICADO DE LICENCIA DE FUNCIONAMIENTO
@@ -242,7 +247,7 @@ const LicenciaImprimirPage = () => {
             </p>
 
             {/* ── CAMPOS ── */}
-            <div style={{ fontSize: '11px', lineHeight: '2.1' }}>
+            <div style={{ fontSize: '12px', lineHeight: '2.1', paddingLeft: '9mm', paddingRight: '9mm' }}>
 
               {/* OTORGADO A */}
               <div style={{ display: 'flex', gap: '2mm' }}>
@@ -308,9 +313,9 @@ const LicenciaImprimirPage = () => {
             {/* ── GLOSA ── */}
             {licencia.glosa && (
               <p style={{
-                fontSize: '10px',
+                fontSize: '12.5px',
                 lineHeight: '1.4',
-                margin: '3mm 0 0 0',
+                margin: '3mm 0 0 9mm',
                 whiteSpace: 'pre-wrap',
               }}>
                 {licencia.glosa}
@@ -319,9 +324,9 @@ const LicenciaImprimirPage = () => {
 
             {/* ── FECHA ── */}
             <p style={{
-              fontSize: '11px',
+              fontSize: '12.5px',
               textAlign: 'right',
-              margin: '4mm 0 0 0',
+              margin: '4mm 12mm 0 0',
               fontWeight: 'bold',
             }}>
               El Porvenir, {formatFechaLarga(licencia.fecha_emision)}
@@ -337,6 +342,7 @@ const LicenciaImprimirPage = () => {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              marginLeft: '25mm',
             }}>
               <QRCode value={qrUrl} size={52} level="M" bgColor="transparent" />
               <p style={{ fontSize: '6px', margin: '2px 0 0 0', color: '#4a2000' }}>
