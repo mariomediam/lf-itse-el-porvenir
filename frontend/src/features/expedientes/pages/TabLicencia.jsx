@@ -184,12 +184,13 @@ function CardEstablecimiento({ licencia }) {
         <Campo etiqueta="Actividad económica" valor={licencia.actividad} />
         <Campo etiqueta="Dirección del local" valor={licencia.direccion} />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Campo etiqueta="Zonificación" valor={licencia.zonificacion_nombre} />
           <Campo
             etiqueta="Área"
             valor={licencia.area != null ? `${Number(licencia.area).toFixed(2)} m²` : '-'}
           />
+          <Campo etiqueta="Medidas" valor={licencia.medidas} />
         </div>
       </div>
     </div>

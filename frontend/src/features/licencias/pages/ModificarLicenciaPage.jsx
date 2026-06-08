@@ -127,6 +127,7 @@ export default function ModificarLicenciaPage() {
   const [direccion,       setDireccion]       = useState('')
   const [zonificacionId,  setZonificacionId]  = useState('')
   const [area,            setArea]            = useState('')
+  const [medidas,         setMedidas]         = useState('')
 
   // Giros
   const [giros,            setGiros]            = useState([])
@@ -207,6 +208,7 @@ export default function ModificarLicenciaPage() {
         setDireccion(lf.direccion ?? '')
         setZonificacionId(String(lf.zonificacion_id))
         setArea(String(lf.area))
+        setMedidas(lf.medidas ?? '')
 
         // Observaciones
         setObservaciones(lf.observaciones ?? '')
@@ -304,6 +306,7 @@ export default function ModificarLicenciaPage() {
       observaciones:            observaciones.trim() || null,
       se_puede_publicar:        false,
       tipo_letrero_id:          Number(tipoLetreroId),
+      medidas:                  medidas.trim() || null,
       giros:                    giros.map((g) => ({ giro_id: g.id })),
     }
 
@@ -680,6 +683,19 @@ export default function ModificarLicenciaPage() {
                       className={inputClass}
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                    Medidas
+                  </label>
+                  <input
+                    type="text"
+                    value={medidas}
+                    onChange={(e) => setMedidas(e.target.value)}
+                    placeholder="Ej. 2.15 MTS X 0.60 MTS"
+                    className={inputClass}
+                  />
                 </div>
 
               </div>
