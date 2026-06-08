@@ -86,6 +86,7 @@ SELECT
         COALESCE(ttitular.nombres, ''))
     ) AS titular_nombre,
     truc.numero_documento AS titular_ruc,
+    ttitular.tipo_persona AS titular_tipo_persona,
     TRIM(
         CONCAT(COALESCE(tconductor.apellido_paterno, ''), ' ',
         COALESCE(tconductor.apellido_materno, ''), ' ',
@@ -97,12 +98,13 @@ SELECT
     END AS esta_activo,
     tl.nombre  AS tipo_licencia_nombre,
     z.nombre   AS zonificacion_nombre,
+    z.codigo   AS zonificacion_codigo,
     nr.nombre  AS nivel_riesgo_nombre,
     tle.nombre AS tipo_letrero_nombre,
     tconductor.direccion AS conductor_direccion,
     tconductor.distrito AS conductor_distrito,
     tconductor.provincia AS conductor_provincia,
-    tconductor.departamento AS conductor_departamento    
+    tconductor.departamento AS conductor_departamento   
 FROM licencias_funcionamiento lf
 LEFT JOIN tipos_licencia tl
     ON lf.tipo_licencia_id = tl.id
