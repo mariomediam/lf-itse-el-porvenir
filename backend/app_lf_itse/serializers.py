@@ -19,6 +19,12 @@ class PlantillaGlosaLicenciaSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class PlantillaGlosaLicenciaWriteSerializer(serializers.Serializer):
+    nombre      = serializers.CharField(max_length=150)
+    descripcion = serializers.CharField()
+    esta_activo = serializers.BooleanField(default=True)
+
+
 class UnidadOrganicaSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.UnidadOrganica

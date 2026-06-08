@@ -65,7 +65,8 @@ from .views import (
     ReniecConsultarView,
     SunatConsultarView,
     TipoDocumentoIdentidadListView,
-    PlantillaGlosaLicenciaListView,
+    PlantillaGlosaLicenciaListCreateView,
+    PlantillaGlosaLicenciaDetailView,
     TipoLetreroListView,
     TipoProcedimientoTupaDetailView,
     TipoProcedimientoTupaListView,
@@ -159,7 +160,8 @@ urlpatterns = [
     path('tipos-letrero/', TipoLetreroListView.as_view(), name='tipo-letrero-list'),
 
     # Plantillas de glosa para licencias
-    path('plantillas-glosa-licencia/', PlantillaGlosaLicenciaListView.as_view(), name='plantilla-glosa-licencia-list'),
+    path('plantillas-glosa-licencia/', PlantillaGlosaLicenciaListCreateView.as_view(), name='plantilla-glosa-licencia-list'),
+    path('plantillas-glosa-licencia/<int:pk>/', PlantillaGlosaLicenciaDetailView.as_view(), name='plantilla-glosa-licencia-detail'),
 
     # Tipos de procedimiento TUPA
     path('tipos-procedimiento-tupa/', TipoProcedimientoTupaListView.as_view(), name='tipo-procedimiento-tupa-list'),

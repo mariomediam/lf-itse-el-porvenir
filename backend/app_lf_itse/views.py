@@ -54,6 +54,7 @@ from .serializers import (
     LicenciasFuncionamientoReporteQuerySerializer,
     NivelRiesgoSerializer,
     PlantillaGlosaLicenciaSerializer,
+    PlantillaGlosaLicenciaWriteSerializer,
     TipoLetreroSerializer,
     TipoLicenciaSerializer,
     UnidadOrganicaSerializer,
@@ -132,7 +133,13 @@ from .services.giro import (
     obtener_giro,
 )
 from .services.nivel_riesgo import listar_niveles_riesgo
-from .services.plantilla_glosa_licencia import listar_plantillas_glosa_licencia
+from .services.plantilla_glosa_licencia import (
+    listar_plantillas_glosa_licencia,
+    obtener_plantilla_glosa_licencia,
+    crear_plantilla_glosa_licencia,
+    actualizar_plantilla_glosa_licencia,
+    eliminar_plantilla_glosa_licencia,
+)
 from .services.tipo_letrero import listar_tipos_letrero
 from .services.tipo_licencia import listar_tipos_licencia
 from .services.unidad_organica import listar_unidades_organicas
@@ -2379,18 +2386,13 @@ class TipoLetreroListView(APIView):
             )
 
 
-class PlantillaGlosaLicenciaListView(APIView):
+class PlantillaGlosaLicenciaListCreateView(APIView):
     """
-    GET /api/lf-itse/plantillas-glosa-licencia/
+    GET  /api/lf-itse/plantillas-glosa-licencia/
+        Lista las plantillas de glosa. Filtro opcional: ?esta_activo=true|false
 
-    Retorna las plantillas de glosa para licencias de funcionamiento.
-
-    Parámetros de query string
-    --------------------------
-    esta_activo : str  (opcional)
-        'true'  → solo activas.
-        'false' → solo inactivas.
-        Si se omite se devuelven todas.
+    POST /api/lf-itse/plantillas-glosa-licencia/
+        Crea una nueva plantilla de glosa.
 
     Requiere autenticación JWT.
     """
@@ -2418,6 +2420,93 @@ class PlantillaGlosaLicenciaListView(APIView):
 
         except Exception as e:
             logger.exception('Error al listar plantillas de glosa')
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    def post(self, request):
+        serializer = PlantillaGlosaLicenciaWriteSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            plantilla = crear_plantilla_glosa_licencia(serializer.validated_data)
+            return Response(
+                PlantillaGlosaLicenciaSerializer(plantilla).data,
+                status=status.HTTP_201_CREATED,
+            )
+
+        except Exception as e:
+            logger.exception('Error al crear plantilla de glosa')
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class PlantillaGlosaLicenciaDetailView(APIView):
+    """
+    GET    /api/lf-itse/plantillas-glosa-licencia/<pk>/
+        Retorna una plantilla de glosa específica.
+
+    PUT    /api/lf-itse/plantillas-glosa-licencia/<pk>/
+        Actualiza una plantilla de glosa.
+
+    DELETE /api/lf-itse/plantillas-glosa-licencia/<pk>/
+        Elimina una plantilla de glosa.
+
+    Requiere autenticación JWT.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            plantilla = obtener_plantilla_glosa_licencia(pk)
+            return Response(
+                PlantillaGlosaLicenciaSerializer(plantilla).data,
+                status=status.HTTP_200_OK,
+            )
+
+        except Exception as e:
+            logger.exception('Error al obtener plantilla de glosa pk=%s', pk)
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    def put(self, request, pk):
+        try:
+            obtener_plantilla_glosa_licencia(pk)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = PlantillaGlosaLicenciaWriteSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            plantilla = actualizar_plantilla_glosa_licencia(pk, serializer.validated_data)
+            return Response(
+                PlantillaGlosaLicenciaSerializer(plantilla).data,
+                status=status.HTTP_200_OK,
+            )
+
+        except Exception as e:
+            logger.exception('Error al actualizar plantilla de glosa pk=%s', pk)
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    def delete(self, request, pk):
+        try:
+            eliminar_plantilla_glosa_licencia(pk)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        except Exception as e:
+            logger.exception('Error al eliminar plantilla de glosa pk=%s', pk)
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
