@@ -591,6 +591,7 @@ class LicenciaFuncionamientoCreateSerializer(serializers.Serializer):
     se_puede_publicar        = serializers.BooleanField(default=False)
     tipo_letrero_id          = serializers.IntegerField()
     giros                    = _GiroItemSerializer(many=True)
+    medidas                  = serializers.CharField(max_length=50, required=False, allow_blank=True, allow_null=True)
 
     def validate(self, data):
         if not data.get('es_vigencia_indeterminada'):
@@ -657,6 +658,7 @@ class LicenciaFuncionamientoUpdateSerializer(serializers.Serializer):
     se_puede_publicar        = serializers.BooleanField(default=False)
     tipo_letrero_id          = serializers.IntegerField()
     giros                    = _GiroItemSerializer(many=True)
+    medidas                  = serializers.CharField(max_length=50, required=False, allow_blank=True, allow_null=True)
 
     def validate(self, data):
         if not data.get('es_vigencia_indeterminada'):

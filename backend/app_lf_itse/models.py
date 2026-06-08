@@ -424,6 +424,7 @@ class LicenciaFuncionamiento(models.Model):
         on_delete=models.PROTECT,
         db_column='tipo_letrero_id',
     )
+    medidas = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:
         db_table = 'licencias_funcionamiento'
