@@ -134,6 +134,10 @@ export default function NuevaLicenciaPage() {
   const [giros,            setGiros]            = useState([])
   const [modalGiroAbierto, setModalGiroAbierto] = useState(false)
 
+  // Glosa
+  const [plantillasGlosa, setPlantillasGlosa] = useState([])
+  const [glosa,            setGlosa]           = useState('')
+
   // Observaciones
   const [observaciones, setObservaciones] = useState('')
 
@@ -158,12 +162,14 @@ export default function NuevaLicenciaPage() {
       licenciasApi.getNivelesRiesgo(),
       licenciasApi.getZonificaciones(),
       licenciasApi.getTiposLetrero(),
+      licenciasApi.getPlantillasGlosa(),
     ])
-      .then(([tipos, niveles, zonas, letreros]) => {
+      .then(([tipos, niveles, zonas, letreros, glosas]) => {
         setTiposLicencia(tipos.data)
         setNivelesRiesgo(niveles.data)
         setZonificaciones(zonas.data)
         setTiposLetrero(letreros.data)
+        setPlantillasGlosa(glosas.data)
       })
       .catch(() => toast.error('Error al cargar los catálogos'))
       .finally(() => setLoadingCatalogos(false))
@@ -285,6 +291,7 @@ export default function NuevaLicenciaPage() {
       se_puede_publicar:       false,
       tipo_letrero_id:         Number(tipoLetreroId),
       medidas:                 medidas.trim() || null,
+      glosa:                   glosa.trim() || null,
       giros:                   giros.map((g) => ({ giro_id: g.id })),
     }
 
@@ -713,6 +720,42 @@ export default function NuevaLicenciaPage() {
                   </p>
                 )}
 
+              </div>
+            </SeccionCard>
+
+            {/* ── Glosa ────────────────────────────────────────────────── */}
+            <SeccionCard icono={IconoTexto} titulo="Glosa">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                    Plantilla de glosa
+                  </label>
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      const sel = plantillasGlosa.find((p) => String(p.id) === e.target.value)
+                      if (sel) setGlosa(sel.descripcion)
+                    }}
+                    className={selectClass}
+                  >
+                    <option value="">Seleccione una plantilla para cargar la glosa</option>
+                    {plantillasGlosa.map((p) => (
+                      <option key={p.id} value={p.id}>{p.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                    Contenido de la glosa
+                  </label>
+                  <textarea
+                    value={glosa}
+                    onChange={(e) => setGlosa(e.target.value)}
+                    rows={5}
+                    placeholder="Seleccione una plantilla o escriba la glosa manualmente..."
+                    className={`${inputClass} resize-y`}
+                  />
+                </div>
               </div>
             </SeccionCard>
 
