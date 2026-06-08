@@ -229,6 +229,12 @@ def construir_menu_usuario(usuario_id: int) -> list[dict]:
                     'url': '/catalogos/tipos-procedimiento-tupa',
                     'submenues': [],
                 },
+                {
+                    'id': 'catalogos-plantillas-glosa-licencia',
+                    'label': 'Glosa de licencia',
+                    'url': '/catalogos/plantillas-glosa-licencia',
+                    'submenues': [],
+                },
             ],
         })
 

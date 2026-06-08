@@ -25,6 +25,7 @@ import PersonasPage from '@features/personas/pages/PersonasPage'
 import GirosPage from '@features/giros/pages/GirosPage'
 import InspectoresPage from '@features/inspectores/pages/InspectoresPage'
 import ZonificacionesPage from '@features/zonificaciones/pages/ZonificacionesPage'
+import PlantillasGlosaPage from '@features/plantillasGlosa/pages/PlantillasGlosaPage'
 import TiposProcedimientoTupaPage from '@features/tipos-procedimiento-tupa/pages/TiposProcedimientoTupaPage'
 import UsuariosPage from '@features/usuarios/pages/UsuariosPage'
 import VerificarDocumentoPage from '@features/verificacion/pages/VerificarDocumentoPage'
@@ -272,6 +273,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ZonificacionesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/catalogos/plantillas-glosa-licencia"
+          element={
+            <ProtectedRoute>
+              <PlantillasGlosaPage />
             </ProtectedRoute>
           }
         />
