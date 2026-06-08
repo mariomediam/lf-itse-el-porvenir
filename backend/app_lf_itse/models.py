@@ -425,6 +425,7 @@ class LicenciaFuncionamiento(models.Model):
         db_column='tipo_letrero_id',
     )
     medidas = models.CharField(max_length=50, blank=True, null=True)
+    glosa = models.TextField(blank=True, null=True)
 
     class Meta:
         db_table = 'licencias_funcionamiento'
@@ -791,6 +792,16 @@ class FeriadoRecurrente(models.Model):
 
 
 
+class PlantillaGlosaLicencia(models.Model):
+    nombre = models.CharField(max_length=150)
+    descripcion = models.TextField()
+    esta_activo = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'plantillas_glosa_licencia'
+
+    def __str__(self):
+        return self.nombre
 
 
 # ── Registro de auditoría ──────────────────────────────────────────────────────

@@ -13,6 +13,12 @@ class TipoLetreroSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class PlantillaGlosaLicenciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.PlantillaGlosaLicencia
+        fields = '__all__'
+
+
 class UnidadOrganicaSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.UnidadOrganica
@@ -592,6 +598,7 @@ class LicenciaFuncionamientoCreateSerializer(serializers.Serializer):
     tipo_letrero_id          = serializers.IntegerField()
     giros                    = _GiroItemSerializer(many=True)
     medidas                  = serializers.CharField(max_length=50, required=False, allow_blank=True, allow_null=True)
+    glosa                    = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     def validate(self, data):
         if not data.get('es_vigencia_indeterminada'):
@@ -659,6 +666,7 @@ class LicenciaFuncionamientoUpdateSerializer(serializers.Serializer):
     tipo_letrero_id          = serializers.IntegerField()
     giros                    = _GiroItemSerializer(many=True)
     medidas                  = serializers.CharField(max_length=50, required=False, allow_blank=True, allow_null=True)
+    glosa                    = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     def validate(self, data):
         if not data.get('es_vigencia_indeterminada'):

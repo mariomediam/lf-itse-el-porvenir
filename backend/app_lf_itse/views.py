@@ -53,6 +53,7 @@ from .serializers import (
     LicenciasFuncionamientoConsultaQuerySerializer,
     LicenciasFuncionamientoReporteQuerySerializer,
     NivelRiesgoSerializer,
+    PlantillaGlosaLicenciaSerializer,
     TipoLetreroSerializer,
     TipoLicenciaSerializer,
     UnidadOrganicaSerializer,
@@ -131,6 +132,7 @@ from .services.giro import (
     obtener_giro,
 )
 from .services.nivel_riesgo import listar_niveles_riesgo
+from .services.plantilla_glosa_licencia import listar_plantillas_glosa_licencia
 from .services.tipo_letrero import listar_tipos_letrero
 from .services.tipo_licencia import listar_tipos_licencia
 from .services.unidad_organica import listar_unidades_organicas
@@ -2371,6 +2373,51 @@ class TipoLetreroListView(APIView):
 
         except Exception as e:
             logger.exception('Error al listar tipos de letrero')
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class PlantillaGlosaLicenciaListView(APIView):
+    """
+    GET /api/lf-itse/plantillas-glosa-licencia/
+
+    Retorna las plantillas de glosa para licencias de funcionamiento.
+
+    Parámetros de query string
+    --------------------------
+    esta_activo : str  (opcional)
+        'true'  → solo activas.
+        'false' → solo inactivas.
+        Si se omite se devuelven todas.
+
+    Requiere autenticación JWT.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            activo_param = request.query_params.get('esta_activo', '').strip().lower()
+            if activo_param == 'true':
+                esta_activo = True
+            elif activo_param == 'false':
+                esta_activo = False
+            elif activo_param == '':
+                esta_activo = None
+            else:
+                return Response(
+                    {'error': "El parámetro 'esta_activo' debe ser 'true' o 'false'."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            plantillas = listar_plantillas_glosa_licencia(esta_activo=esta_activo)
+            serializer = PlantillaGlosaLicenciaSerializer(plantillas, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.exception('Error al listar plantillas de glosa')
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,

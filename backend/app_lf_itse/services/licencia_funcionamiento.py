@@ -77,6 +77,7 @@ SELECT
     lf.fecha_digitacion,
     lf.tipo_letrero_id,
     lf.medidas,
+    lf.glosa,
     e.numero_expediente,
     e.fecha_recepcion,
     TRIM(
@@ -499,6 +500,7 @@ def crear_licencia(data: dict, usuario) -> LicenciaFuncionamiento:
             se_puede_publicar     = data.get('se_puede_publicar', False),
             tipo_letrero_id       = data['tipo_letrero_id'],
             medidas               = data.get('medidas'),
+            glosa                 = data.get('glosa'),
             usuario               = usuario,
             fecha_digitacion      = timezone.now(),
         )
@@ -598,6 +600,7 @@ def modificar_licencia(licencia_id: int, data: dict, usuario=None) -> LicenciaFu
         licencia.se_puede_publicar      = data.get('se_puede_publicar', False)
         licencia.tipo_letrero_id        = data['tipo_letrero_id']
         licencia.medidas                = data.get('medidas')
+        licencia.glosa                  = data.get('glosa')
         licencia.save()
 
         # Reemplaza completamente los giros asociados
