@@ -185,27 +185,27 @@ const LicenciaImprimirPage = () => {
               <div style={{
                 border: '3.5px solid #4a2000',
                 padding: '2mm 5mm',
-                fontSize: '16px',
+                fontSize: '20px',
                 fontWeight: 'bold',
-                marginTop: '15mm',
-                marginLeft: '43mm',
+                marginTop: '18mm',
+                marginLeft: '52mm',
               }}>
                 {numLic}
               </div>
 
               {/* Expediente + Vencimiento */}
               <div style={{ textAlign: 'right' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3mm', marginBottom: '3mm' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '2mm', marginBottom: '3mm' }}>
                   
                   <span style={{
-                    border: '1px solid #4a2000',
+                    // border: '1px solid #4a2000',
                     padding: '1.5mm 4mm',
-                    fontSize: '11px',
+                    fontSize: '18px',
                     fontWeight: 'bold',
                     minWidth: '25mm',
                     textAlign: 'center',
-                    marginTop: '11mm',
-                    marginRight: '18mm',
+                    marginTop: '14mm',
+                    marginRight: '33mm',
                   }}>
                     {numExp}
                   </span>
@@ -213,14 +213,14 @@ const LicenciaImprimirPage = () => {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3mm' }}>
                   
                   <span style={{
-                    border: '1px solid #4a2000',
+                    // border: '1px solid #4a2000',
                     padding: '1.5mm 4mm',
-                    fontSize: '11px',
+                    fontSize: '18px',
                     fontWeight: 'bold',
                     minWidth: '25mm',
                     textAlign: 'center',
-                    marginTop: '1mm',
-                    marginRight: '18mm',
+                    marginTop: '0mm',
+                    marginRight: '23mm',
                   }}>
                     {vencimiento}
                   </span>
@@ -233,7 +233,7 @@ const LicenciaImprimirPage = () => {
               textAlign: 'center',
               fontSize: '18px',
               fontWeight: 'bold',
-              margin: '5mm 0 0 0',
+              margin: '2mm 0 0 0',
               letterSpacing: '0.5px',
             }}>
               CERTIFICADO DE LICENCIA DE FUNCIONAMIENTO
@@ -241,13 +241,13 @@ const LicenciaImprimirPage = () => {
             <p style={{
               textAlign: 'center',
               fontSize: '8.5px',
-              margin: '0 0 4mm 0',
+              margin: '0 0 3mm 0',
             }}>
               Ley Orgánica de Municipalidades N° 27972, Ley Marco de Licencia de Funcionamiento N° 28976.
             </p>
 
             {/* ── CAMPOS ── */}
-            <div style={{ fontSize: '12px', lineHeight: '2.1', paddingLeft: '9mm', paddingRight: '9mm' }}>
+            <div style={{ fontSize: '12px', lineHeight: '1.8', paddingLeft: '9mm', paddingRight: '9mm' }}>
 
               {/* OTORGADO A */}
               <div style={{ display: 'flex', gap: '2mm' }}>
@@ -326,7 +326,7 @@ const LicenciaImprimirPage = () => {
             <p style={{
               fontSize: '12.5px',
               textAlign: 'right',
-              margin: '4mm 12mm 0 0',
+              margin: '1mm 12mm 0 0',
               fontWeight: 'bold',
             }}>
               El Porvenir, {formatFechaLarga(licencia.fecha_emision)}
@@ -337,12 +337,12 @@ const LicenciaImprimirPage = () => {
           {qrUrl && (
             <div style={{
               position: 'absolute',
-              bottom: '18mm',
-              left: '12mm',
+              bottom: '25mm',
+              left: '10mm',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              marginLeft: '25mm',
+              marginLeft: '17mm',
             }}>
               <QRCode value={qrUrl} size={52} level="M" bgColor="transparent" />
               <p style={{ fontSize: '6px', margin: '2px 0 0 0', color: '#4a2000' }}>
