@@ -4,14 +4,6 @@ import { QRCode } from 'react-qr-code'
 import { itseApi } from '@api/itseApi'
 import { configPublicaApi } from '@api/configPublicaApi'
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-const NOTAS = [
-  'DE ACUERDO A LO ESTABLECIDO EN EL REGLAMENTO DE INSPECCIONES TÉCNICAS DE SEGURIDAD EN EDIFICACIONES APROBADO POR DECRETO SUPREMO N° 002-2018 PCM, EL PRESENTE CERTIFICADO DEBERÁ SER FIRMADO POR EL RESPONSABLE DEL ÓRGANO EJECUTANTE.',
-  'ESTE CERTIFICADO DEBERÁ COLOCARSE EN UN LUGAR VISIBLE DENTRO DEL ESTABLECIMIENTO OBJETO DE INSPECCIÓN.',
-  'CUALQUIER TACHA O ENMENDADURA INVALIDA EL PRESENTE CERTIFICADO.',
-]
-
 const getAnio = (fechaStr) => {
   if (!fechaStr) return '-'
   return new Date(fechaStr).getUTCFullYear()
@@ -36,8 +28,6 @@ const calcularVigencia = (fechaInicio, fechaFin) => {
   return `${meses} ${meses === 1 ? 'MES' : 'MESES'}`
 }
 
-// ── Número a letras (español) ─────────────────────────────────────────────────
-
 const UNIDADES = ['', 'UN', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE']
 const ESPECIALES = ['DIEZ', 'ONCE', 'DOCE', 'TRECE', 'CATORCE', 'QUINCE']
 const DECENAS_PREFIX = ['', '', 'VEINTI', 'TREINTA', 'CUARENTA', 'CINCUENTA', 'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA']
@@ -48,22 +38,18 @@ function numeroALetras(n) {
   n = Math.floor(Math.abs(n))
   if (n === 0) return 'CERO'
   if (n === 100) return 'CIEN'
-
   let resultado = ''
-
   if (n >= 1000) {
     const miles = Math.floor(n / 1000)
     resultado += miles === 1 ? 'MIL' : `${numeroALetras(miles)} MIL`
     n %= 1000
     if (n > 0) resultado += ' '
   }
-
   if (n >= 100) {
     resultado += CENTENAS[Math.floor(n / 100)]
     n %= 100
     if (n > 0) resultado += ' '
   }
-
   if (n >= 10 && n <= 15) {
     resultado += ESPECIALES[n - 10]
   } else if (n >= 16 && n <= 19) {
@@ -79,19 +65,17 @@ function numeroALetras(n) {
   } else if (n >= 1) {
     resultado += UNIDADES[n]
   }
-
   return resultado
 }
 
-// ── Colores ───────────────────────────────────────────────────────────────────
-
-const AZUL = '#2E5495'
-const NARANJA = '#FE9900'
-
-// ── Página principal ──────────────────────────────────────────────────────────
+const NOTAS = [
+  'DE ACUERDO A LO ESTABLECIDO EN EL REGLAMENTO DE INSPECCIONES TÉCNICAS DE SEGURIDAD EN EDIFICACIONES APROBADO POR DECRETO SUPREMO N° 002-2018 PCM, EL PRESENTE CERTIFICADO DEBERÁ SER FIRMADO POR EL RESPONSABLE DEL ÓRGANO EJECUTANTE.',
+  'ESTE CERTIFICADO DEBERÁ COLOCARSE EN UN LUGAR VISIBLE DENTRO DEL ESTABLECIMIENTO OBJETO DE INSPECCIÓN.',
+  'CUALQUIER TACHA O ENMENDADURA INVALIDA EL PRESENTE CERTIFICADO.',
+]
 
 const ItseImprimirPage = () => {
-  const { id }   = useParams()
+  const { id } = useParams()
   const navigate = useNavigate()
 
   const [itse, setItse] = useState(null)
@@ -152,17 +136,20 @@ const ItseImprimirPage = () => {
     )
   }
 
-  // ── Datos calculados ────────────────────────────────────────────────────────
-  const anioItse = getAnio(itse.fecha_expedicion)
+  const anioExpedicion = getAnio(itse.fecha_expedicion)
   const girosTexto = giros.map((g) => g.nombre).join(', ').toUpperCase()
-  const numExp = itse.numero_expediente
-    ? `${itse.numero_expediente} - ${getAnio(itse.fecha_recepcion)} - TD`
-    : '-'
   const vigencia = calcularVigencia(itse.fecha_expedicion, itse.fecha_caducidad)
   const aforo = itse.capacidad_aforo ?? 0
   const aforoLetras = numeroALetras(aforo)
+  const numExp = itse.numero_expediente
+    ? `E-${itse.numero_expediente}-${getAnio(itse.fecha_recepcion)}`
+    : '-'
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  const celdasEstilo = { padding: '7px 4px', fontSize: '13px', verticalAlign: 'top' }
+  const labelEstilo = { ...celdasEstilo, fontWeight: 'bold', whiteSpace: 'nowrap' }
+  const colonEstilo = { ...celdasEstilo, width: '10px', textAlign: 'center' }
+  const valorEstilo = { ...celdasEstilo, fontWeight: 'bold' }
+
   return (
     <>
       <style>{`
@@ -194,196 +181,230 @@ const ItseImprimirPage = () => {
           Volver
         </button>
         <span className="text-sm text-gray-500 ml-2">
-          Vista previa — ITSE N° {itse.numero_itse} - {anioItse}
+          Vista previa — ITSE N° {itse.numero_itse}-{anioExpedicion}
         </span>
       </div>
 
       {/* Fondo gris */}
       <div className="fondo-gris-itse" style={{ backgroundColor: '#d1d5db', minHeight: '100vh', paddingTop: '32px', paddingBottom: '32px' }}>
 
-        {/* Hoja A4 — borde exterior azul */}
+        {/* Hoja A4 */}
         <div className="hoja-a4-itse" style={{
           width: '210mm',
           height: '297mm',
           margin: '0 auto',
-          backgroundColor: '#ffffff',
-          border: `15px solid ${AZUL}`,
-          padding: '0mm',
+          backgroundColor: '#fff',
           boxSizing: 'border-box',
           fontFamily: 'Arial, sans-serif',
-          color: '#000000',
-        }}>
-
-        {/* Borde interior naranja */}
-        <div style={{
-          border: `10px solid ${NARANJA}`,
-          height: '100%',
-          padding: '6mm 10mm',
-          boxSizing: 'border-box',
+          color: '#000',
+          position: 'relative',
+          overflow: 'hidden',
+          padding: '12mm 16mm 12mm 16mm',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
           display: 'flex',
           flexDirection: 'column',
         }}>
 
-          {/* ── ENCABEZADO: escudo + título ── */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginLeft: '-8mm', marginTop: '-4mm' }}>
-            <img
-              src="/images/escudo-muni.png"
-              alt="Escudo Municipalidad"
-              style={{ height: '100px', width: 'auto', flexShrink: 0 }}
-              onError={(e) => { e.target.style.display = 'none' }}
-            />
-            <p style={{
-              fontWeight: 'bold',
-              fontSize: '15px',
-              margin: '15px 0 0 0',
-              lineHeight: '1.4',
-              textTransform: 'uppercase',
-              textAlign: 'center',
-              flex: 1,
+          {/* Marca de agua de fondo */}
+          <img
+            src="/images/escudo-muni.png"
+            alt=""
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              opacity: 0.06,
+              width: '75%',
+              pointerEvents: 'none',
+              zIndex: 0,
+            }}
+            onError={(e) => { e.target.style.display = 'none' }}
+          />
 
-            }}>
-              CERTIFICADO DE INSPECCIÓN TÉCNICA DE SEGURIDAD EN EDIFICACIONES PARA
-              ESTABLECIMIENTOS OBJETO DE INSPECCIÓN CLASIFICADOS CON NIVEL DE{' '}
-              
-                {(itse.nivel_riesgo_nombre || '').toUpperCase()}
-              
-                {' '} SEGÚN LA MATRIZ DE RIESGOS
-            </p>
-          </div>
+          {/* Contenido sobre la marca de agua */}
+          <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', flex: 1 }}>
 
-          {/* ── N° ITSE ── */}
-          <p style={{
-            fontWeight: 'bold',
-            fontSize: '18px',
-            textAlign: 'center',
-            margin: '-12px 0 10px 0',
-            textDecoration: 'underline',
-          }}>
-            N° {itse.numero_itse}
-          </p>
-
-          {/* ── PÁRRAFO INTRODUCTORIO ── */}
-          <p style={{ fontSize: '13px', textAlign: 'justify', margin: '0 0 6px 0', lineHeight: '1.9' }}>
-            El Órgano Ejecutante de la Municipalidad Distrital de El Porvenir, en cumplimiento
-            de lo establecido en el D.S. Nº 002-2018-PCM, ha realizado la Inspección Técnica de
-            Seguridad en Edificaciones al Establecimiento Objeto de Inspección:
-          </p>
-
-          {/* ── NOMBRE COMERCIAL ── */}
-          <p style={{
-            fontWeight: 'bold',
-            fontSize: '24px',
-            textAlign: 'center',
-            margin: '4px 0 14px 0',
-            textTransform: 'uppercase',
-            lineHeight: '1.3',
-          }}>
-            {itse.nombre_comercial || '-'}
-          </p>
-
-          {/* ── UBICACIÓN ── */}
-          <p style={{ fontSize: '13px', margin: '0 0 8px 0', lineHeight: '1.7' }}>
-            Ubicado en el <strong>{itse.direccion || '-'}</strong>,
-            Distrito <strong>Huamachuco</strong>,
-            Provincia <strong>El Porvenir</strong>,
-            Departamento <strong>La Libertad</strong>.
-          </p>
-
-          {/* ── SOLICITADO POR ── */}
-          <p style={{ fontSize: '13px', margin: '0 0 8px 0', lineHeight: '1.7' }}>
-            Solicitado por: <strong>{(itse.titular_nombre || '-').toUpperCase()}</strong>
-          </p>
-
-          {/* ── CERTIFICA ── */}
-          <p style={{ fontSize: '13px', textAlign: 'justify', margin: '0 0 8px 0', lineHeight: '1.7' }}>
-            El que suscribe <strong><em>CERTIFICA</em></strong> que el Establecimiento Objeto de
-            Inspección antes señalado <strong>CUMPLE CON LAS CONDICIONES DE SEGURIDAD</strong>.
-          </p>
-
-          {/* ── CAPACIDAD ── */}
-          <p style={{ fontSize: '13px', margin: '0 0 8px 0', lineHeight: '1.7' }}>
-            Capacidad Máxima de la Edificación:{' '}
-            <strong>{aforo} ({aforoLetras}) Personas</strong>
-          </p>
-
-          {/* ── ÁREA ── */}
-          <p style={{ fontSize: '13px', margin: '0 0 8px 0', lineHeight: '1.7' }}>
-            Área: <strong>{itse.area != null ? `${Number(itse.area).toFixed(2)}` : '-'} m²</strong>
-          </p>
-
-          {/* ── GIRO ── */}
-          <p style={{ fontSize: '13px', margin: '0 0 8px 0', lineHeight: '1.7' }}>
-            Giro o actividad: <strong>{girosTexto || '-'}</strong>
-          </p>
-
-          {/* ── EXPEDIENTE + RESOLUCIÓN ── */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
-            <p style={{ margin: 0, lineHeight: '1.7' }}>
-              Expediente Nº: <strong>{numExp}</strong>
-            </p>
-            <p style={{ margin: '0 20px 0 0', lineHeight: '1.7' }}>
-              Resolución N°: <strong>{itse.resolucion_numero || '-'}</strong>
-            </p>
-          </div>
-
-          {/* ── VIGENCIA ── */}
-          <p style={{ fontSize: '13px', margin: '0 0 8px 0', lineHeight: '1.7', fontWeight: 'bold'}}>
-            VIGENCIA: {vigencia}*
-          </p>
-
-          
-          {/* ── LUGAR Y FECHAS ── */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px', marginBottom: '10px' }}>
-            <div style={{ fontSize: '13px', lineHeight: '1.8' }}>
-              <div style={{ display: 'flex' }}>
-                <span style={{ minWidth: '260px' }}>LUGAR</span>
-                <span>: <strong>HUAMACHUCO</strong></span>
-              </div>
-              <div style={{ display: 'flex' }}>
-                <span style={{ minWidth: '260px' }}>FECHA DE EXPEDICIÓN</span>
-                <span>: <strong>{formatFecha(itse.fecha_expedicion)}</strong></span>
-              </div>
-              <div style={{ display: 'flex' }}>
-                <span style={{ minWidth: '260px' }}>FECHA DE SOLICITUD DE RENOVACIÓN</span>
-                <span>: <strong>{formatFecha(itse.fecha_solicitud_renovacion)}</strong></span>
-              </div>
-              <div style={{ display: 'flex' }}>
-                <span style={{ minWidth: '260px' }}>FECHA DE CADUCIDAD</span>
-                <span>: <strong>{formatFecha(itse.fecha_caducidad)}</strong></span>
-              </div>
-            </div>
-          </div>
-
-          {/* Espaciador */}
-          <div style={{ flex: 1 }} />
-
-
-          {/* ── QR ── */}
-          {qrUrl && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'end', marginBottom: '8px' }}>
-              <QRCode value={qrUrl} size={68} level="M" />
-              <p style={{ fontSize: '7px', margin: '3px 0 0 0', textAlign: 'center', color: '#555' }}>
-                Verificar documento
+            {/* ── ENCABEZADO: Logo muni + Título + Logo CENEPRED ── */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '6px' }}>
+              <img
+                src="/images/escudo-muni.png"
+                alt="Escudo Municipalidad"
+                style={{ height: '95px', width: 'auto', flexShrink: 0 }}
+                onError={(e) => { e.target.style.display = 'none' }}
+              />
+              <p style={{
+                fontWeight: 'bold',
+                fontSize: '15px',
+                margin: '8px 0 0 0',
+                lineHeight: '1.35',
+                textTransform: 'uppercase',
+                textAlign: 'center',
+                flex: 1,
+              }}>
+                CERTIFICADO DE INSPECCIÓN TÉCNICA DE SEGURIDAD EN EDIFICACIONES PARA
+                ESTABLECIMIENTOS OBJETO DE INSPECCIÓN CLASIFICADOS CON NIVEL DE RIESGO{' '}
+                {(itse.nivel_riesgo_nombre || '').toUpperCase()}{' '}
+                SEGÚN LA MATRIZ DE RIESGOS
               </p>
+              <img
+                src="/images/escudo-cenepred.png"
+                alt="CENEPRED"
+                style={{ height: '90px', width: 'auto', flexShrink: 0 }}
+                onError={(e) => { e.target.style.display = 'none' }}
+              />
             </div>
-          )}
 
-          {/* ── PIE DE PÁGINA ── */}
-          <div style={{ paddingTop: '5px' }}>
-            <p style={{ fontSize: '8px', margin: '0 0 4px 0', lineHeight: '1.3', fontStyle: 'italic' }}>
-              *El presente Certificado de ITSE no constituye autorización alguna para el
-              funcionamiento del Establecimiento Objeto de Inspección o para el inicio de la actividad
+            {/* ── N° ITSE ── */}
+            <p style={{
+              fontWeight: '900',
+              fontSize: '22px',
+              textAlign: 'center',
+              margin: '4px 0 10px 0',              
+            }}>
+              N° {itse.numero_itse}-{anioExpedicion}
             </p>
-            <p style={{ fontWeight: 'bold', fontSize: '8px', margin: '0 0 2px 0', textDecoration: 'underline' }}>NOTA:</p>
-            {NOTAS.map((texto, i) => (
-              <div key={i} style={{ display: 'flex', gap: '3px', marginBottom: '1px' }}>
-                <span style={{ fontSize: '9px', flexShrink: 0 }}>-</span>
-                <p style={{ margin: 0, fontSize: '8px', lineHeight: '1.3', textTransform: 'uppercase' }}>{texto}</p>
-              </div>
-            ))}
-          </div>
 
-        </div>{/* fin borde interior */}
+            {/* ── PÁRRAFO INTRODUCTORIO ── */}
+            <p style={{ fontSize: '13.7px', textAlign: 'justify', margin: '0 0 8px 0', lineHeight: '1.3' }}>
+              El Órgano Ejecutante de la Municipalidad Distrital de El Porvenir, en cumplimiento
+              de lo establecido en el D.S. N.º 002-2018-PCM, ha realizado la Inspección Técnica de
+              Seguridad en Edificaciones al Establecimiento Objeto de Inspección:
+            </p>
+
+            {/* ── NOMBRE COMERCIAL ── */}
+            <p style={{
+              fontWeight: '900',
+              fontSize: '22px',
+              textAlign: 'center',
+              margin: '4px 0 12px 0',
+              textTransform: 'uppercase',
+              lineHeight: '1.3',
+            }}>
+              {itse.nombre_comercial || '-'}
+            </p>
+
+            {/* ── TABLA DE DATOS ── */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '0' }}>
+              <tbody>
+                <tr>
+                  <td style={labelEstilo}>DIRECCION</td>
+                  <td style={colonEstilo}>:</td>
+                  <td style={valorEstilo}>{(itse.direccion || '').toUpperCase()}</td>
+                </tr>
+                <tr>
+                  <td style={labelEstilo}>Distrito</td>
+                  <td style={colonEstilo}>:</td>
+                  <td style={valorEstilo}>EL PORVENIR</td>
+                </tr>
+                <tr>
+                  <td style={labelEstilo}>Provincia</td>
+                  <td style={colonEstilo}>:</td>
+                  <td style={valorEstilo}>TRUJILLO</td>
+                </tr>
+                <tr>
+                  <td style={labelEstilo}>Departamento</td>
+                  <td style={colonEstilo}>:</td>
+                  <td style={valorEstilo}>LA LIBERTAD</td>
+                </tr>
+                <tr>
+                  <td style={labelEstilo}>TITULAR</td>
+                  <td style={colonEstilo}>:</td>
+                  <td style={valorEstilo}>{(itse.titular_nombre || '').toUpperCase()}</td>
+                </tr>
+                <tr>
+                  <td style={labelEstilo}>AREA</td>
+                  <td style={colonEstilo}>:</td>
+                  <td style={valorEstilo}>
+                    {itse.area != null ? <>{Number(itse.area).toFixed(2)} m<sup>2</sup></> : '-'}
+                  </td>
+                </tr>
+
+                {/* Fila combinada: Certificación */}
+                <tr>
+                  <td colSpan={3} style={{ padding: '8px 4px', fontSize: '13px', lineHeight: '1.5' }}>
+                    <p>
+                    El que suscribe <strong>CERTIFICA</strong> que el Establecimiento Objeto de
+                    Inspección antes señalado <strong>CUMPLE CON LAS CONDICIONES DE SEGURIDAD</strong>.
+                    </p>
+                    <p style={{ marginTop: '12px' }}>
+                    Capacidad Máxima de la Edificación:{' '}
+                    <strong>{aforo} ({aforoLetras}) personas.</strong>
+                    </p>
+                  </td>
+                </tr>
+
+                {/* Giro o actividad */}
+                <tr>
+                  <td style={labelEstilo}>Giro o actividad</td>
+                  <td style={colonEstilo}>:</td>
+                  <td style={valorEstilo}>{girosTexto || '-'}.</td>
+                </tr>
+                {/* Expediente y Resolución */}
+                <tr>
+                  <td style={labelEstilo}>Expediente Nº</td>
+                  <td style={colonEstilo}>:</td>
+                  <td style={{ ...valorEstilo, display: 'flex', justifyContent: 'space-between' }}>
+                    <span>{numExp}</span>
+                    <span style={{ marginRight: '50px' }}>Resolución: {itse.resolucion_numero || '-'}</span>
+                  </td>
+                </tr>
+                {/* Vigencia */}
+                <tr>
+                  <td style={labelEstilo}>VIGENCIA</td>
+                  <td style={colonEstilo}>:</td>
+                  <td style={valorEstilo}>{vigencia}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* ── FECHAS ── */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', marginBottom: '10px' }}>
+              <div style={{ fontSize: '13px', lineHeight: '2' }}>
+                <div style={{ display: 'flex' }}>
+                  <span style={{ minWidth: '290px' }}>FECHA DE EXPEDICIÓN</span>
+                  <span>: <strong>{formatFecha(itse.fecha_expedicion)}</strong></span>
+                </div>
+                <div style={{ display: 'flex' }}>
+                  <span style={{ minWidth: '290px' }}>FECHA DE SOLICITUD DE RENOVACIÓN</span>
+                  <span>: <strong>{formatFecha(itse.fecha_solicitud_renovacion)}</strong></span>
+                </div>
+                <div style={{ display: 'flex' }}>
+                  <span style={{ minWidth: '290px' }}>FECHA DE CADUCIDAD</span>
+                  <span>: <strong>{formatFecha(itse.fecha_caducidad)}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            {/* Espaciador */}
+            <div style={{ flex: 1 }} />
+
+            {/* ── QR ── */}
+            {qrUrl && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginBottom: '8px' }}>
+                <QRCode value={qrUrl} size={68} level="M" bgColor="transparent" />
+                <p style={{ fontSize: '7px', margin: '3px 0 0 0', color: '#555' }}>
+                  Verificar documento
+                </p>
+              </div>
+            )}
+
+            {/* ── PIE DE PÁGINA ── */}
+            <div style={{ paddingTop: '5px' }}>
+              <p style={{ fontSize: '8px', margin: '0 0 4px 0', lineHeight: '1.3', fontStyle: 'italic' }}>
+                *El presente Certificado de ITSE no constituye autorización alguna para el
+                funcionamiento del Establecimiento Objeto de Inspección o para el inicio de la actividad
+              </p>
+              <p style={{ fontWeight: 'bold', fontSize: '8px', margin: '0 0 2px 0', textDecoration: 'underline' }}>NOTA:</p>
+              {NOTAS.map((texto, i) => (
+                <div key={i} style={{ display: 'flex', gap: '3px', marginBottom: '1px' }}>
+                  <span style={{ fontSize: '9px', flexShrink: 0 }}>-</span>
+                  <p style={{ margin: 0, fontSize: '8px', lineHeight: '1.3', textTransform: 'uppercase' }}>{texto}</p>
+                </div>
+              ))}
+            </div>
+
+          </div>{/* fin contenido */}
         </div>{/* fin hoja A4 */}
       </div>{/* fin fondo gris */}
     </>
