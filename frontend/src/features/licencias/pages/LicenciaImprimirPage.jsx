@@ -250,10 +250,10 @@ const LicenciaImprimirPage = () => {
             <div style={{ fontSize: '12px', lineHeight: '1.8', paddingLeft: '9mm', paddingRight: '9mm' }}>
 
               {/* OTORGADO A */}
-              <div style={{ display: 'flex', gap: '2mm' }}>
-                <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>OTORGADO A</span>
+              <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-end' }}>
+                <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', width: '34mm', flexShrink: 0 }}>OTORGADO A</span>
                 <span style={{ whiteSpace: 'nowrap' }}>:</span>
-                <span style={{ fontWeight: 'bold' }}>
+                <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>
                   {(licencia.titular_nombre || '').toUpperCase()}
                   {docTitularTexto && (
                     <span style={{ marginLeft: '12px' }}>{docTitularTexto}</span>
@@ -265,48 +265,52 @@ const LicenciaImprimirPage = () => {
               </div>
 
               {/* GIRO O ACTIVIDAD */}
-              <div style={{ display: 'flex', gap: '2mm' }}>
-                <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>GIRO O ACTIVIDAD</span>
+              <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-end' }}>
+                <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', width: '34mm', flexShrink: 0 }}>GIRO O ACTIVIDAD</span>
                 <span style={{ whiteSpace: 'nowrap' }}>:</span>
-                <span style={{ fontWeight: 'bold' }}>{girosTexto || '-'}</span>
+                <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>{girosTexto || '-'}</span>
               </div>
 
               {/* NOMBRE COMERCIAL */}
-              <div style={{ display: 'flex', gap: '2mm' }}>
-                <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>NOMBRE COMERCIAL</span>
+              <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-end' }}>
+                <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', width: '34mm', flexShrink: 0 }}>NOMBRE COMERCIAL</span>
                 <span style={{ whiteSpace: 'nowrap' }}>:</span>
-                <span style={{ fontWeight: 'bold' }}>{(licencia.nombre_comercial || '').toUpperCase()}</span>
+                <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>{(licencia.nombre_comercial || '').toUpperCase()}</span>
               </div>
 
               {/* DIRECCIÓN */}
-              <div style={{ display: 'flex', gap: '2mm' }}>
-                <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>DIRECCIÓN</span>
+              <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-end' }}>
+                <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', width: '34mm', flexShrink: 0 }}>DIRECCIÓN</span>
                 <span style={{ whiteSpace: 'nowrap' }}>:</span>
-                <span style={{ fontWeight: 'bold' }}>{(licencia.direccion || '').toUpperCase()}</span>
+                <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>{(licencia.direccion || '').toUpperCase()}</span>
               </div>
 
               {/* ÁREA COMERCIAL + CÓDIGO CATASTRAL */}
-              <div style={{ display: 'flex', gap: '2mm' }}>
-                <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>ÁREA COMERCIAL</span>
+              <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-end' }}>
+                <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', width: '34mm', flexShrink: 0 }}>ÁREA COMERCIAL</span>
                 <span style={{ whiteSpace: 'nowrap' }}>:</span>
-                <span style={{ fontWeight: 'bold' }}>
+                <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>
                   {licencia.area != null ? `${Number(licencia.area).toFixed(0)} m²` : '-'}
                 </span>
-                <span style={{ marginLeft: '20mm', fontWeight: 'bold', whiteSpace: 'nowrap' }}>CÓDIGO CATASTRAL:</span>
-                <span style={{ fontWeight: 'bold', marginLeft: '2mm' }}>
-                  {licencia.zonificacion_codigo || '-'}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'flex-end', flexShrink: 0, width: '75mm' }}>
+                  <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>CÓDIGO CATASTRAL:</span>
+                  <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', marginLeft: '2mm', minWidth: 0, textAlign: 'center' }}>
+                    {licencia.zonificacion_codigo || '-'}
+                  </span>
+                </div>
               </div>
 
               {/* TIPO DE ANUNCIO + MEDIDA */}
-              <div style={{ display: 'flex', gap: '2mm' }}>
-                <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>TIPO DE ANUNCIO</span>
+              <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-end' }}>
+                <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', width: '34mm', flexShrink: 0 }}>TIPO DE ANUNCIO</span>
                 <span style={{ whiteSpace: 'nowrap' }}>:</span>
-                <span style={{ fontWeight: 'bold' }}>{licencia.tipo_letrero_nombre || '-'}</span>
-                <span style={{ marginLeft: '20mm', fontWeight: 'bold', whiteSpace: 'nowrap' }}>MEDIDA:</span>
-                <span style={{ fontWeight: 'bold', marginLeft: '2mm' }}>
-                  {licencia.medidas || '-'}
-                </span>
+                <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>{licencia.tipo_letrero_nombre || '-'}</span>
+                <div style={{ display: 'flex', alignItems: 'flex-end', flexShrink: 0, width: '75mm' }}>
+                  <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>MEDIDA:</span>
+                  <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', marginLeft: '2mm', minWidth: 0, textAlign: 'center' }}>
+                    {licencia.medidas || '-'}
+                  </span>
+                </div>
               </div>
             </div>
 
