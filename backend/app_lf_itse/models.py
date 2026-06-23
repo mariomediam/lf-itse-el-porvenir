@@ -418,7 +418,7 @@ class LicenciaFuncionamiento(models.Model):
         db_column='usuario_id',
         related_name='licencias_funcionamiento_digitadas',
     )
-    fecha_digitacion = models.DateTimeField()
+    fecha_digitacion = models.DateTimeField(default=timezone.now)
     tipo_letrero = models.ForeignKey(
         TipoLetrero,
         on_delete=models.PROTECT,
