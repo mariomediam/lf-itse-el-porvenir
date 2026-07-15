@@ -397,13 +397,15 @@ class LicenciaFuncionamiento(models.Model):
     )
     actividad = models.CharField(max_length=50)
     direccion = models.CharField(max_length=250)
-    hora_desde = models.IntegerField()
-    hora_hasta = models.IntegerField()
+    hora_desde = models.IntegerField(null=True, blank=True)
+    hora_hasta = models.IntegerField(null=True, blank=True)
     resolucion_numero = models.CharField(max_length=50)
     zonificacion = models.ForeignKey(
         Zonificacion,
         on_delete=models.PROTECT,
         db_column='zonificacion_id',
+        null=True,
+        blank=True,
     )
     area = models.DecimalField(max_digits=18, decimal_places=2)
     numero_recibo_pago = models.CharField(max_length=20)

@@ -245,15 +245,12 @@ export default function NuevaLicenciaPage() {
     if (!tipoLicenciaId)   { toast.error('Seleccione el tipo de licencia');            return }
     if (!resolucionNumero) { toast.error('Ingrese el número de resolución');           return }
     if (!nivelRiesgoId)    { toast.error('Seleccione el nivel de riesgo');             return }
-    if (!horaDesde)        { toast.error('Ingrese la hora de inicio del horario');     return }
-    if (!horaHasta)        { toast.error('Ingrese la hora de cierre del horario');     return }
     if (!tipoLetreroId)    { toast.error('Seleccione el tipo de letrero');              return }
     if (!titular)          { toast.error('Seleccione el titular de la licencia');      return }
     if (!representante)    { toast.error('Seleccione el representante legal');         return }
     if (!nombreComercial)  { toast.error('Ingrese el nombre comercial');               return }
     if (!actividad)        { toast.error('Ingrese la actividad económica');            return }
     if (!direccion)        { toast.error('Ingrese la dirección del local');            return }
-    if (!zonificacionId)   { toast.error('Seleccione la zonificación');               return }
     if (!area)             { toast.error('Ingrese el área del establecimiento');       return }
 
     if (!esVigenciaIndeter) {
@@ -281,10 +278,10 @@ export default function NuevaLicenciaPage() {
       nivel_riesgo_id:         Number(nivelRiesgoId),
       actividad:               actividad.trim(),
       direccion:               direccion.trim(),
-      hora_desde:              Number(horaDesde),
-      hora_hasta:              Number(horaHasta),
+      hora_desde:              horaDesde !== '' ? Number(horaDesde) : null,
+      hora_hasta:              horaHasta !== '' ? Number(horaHasta) : null,
       resolucion_numero:       resolucionNumero.trim(),
-      zonificacion_id:         Number(zonificacionId),
+      zonificacion_id:         zonificacionId ? Number(zonificacionId) : null,
       area:                    area,
       numero_recibo_pago:      numeroReciboPago.trim(),
       observaciones:           observaciones.trim() || null,
@@ -495,7 +492,7 @@ export default function NuevaLicenciaPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                      Hora desde <span className="text-danger">*</span>
+                      Hora desde
                     </label>
                     <input
                       type="number"
@@ -503,13 +500,13 @@ export default function NuevaLicenciaPage() {
                       max="23"
                       value={horaDesde}
                       onChange={(e) => setHoraDesde(e.target.value)}
-                      placeholder="0"
+                      placeholder="0 (opcional)"
                       className={inputClass}
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                      Hora hasta <span className="text-danger">*</span>
+                      Hora hasta
                     </label>
                     <input
                       type="number"
@@ -517,7 +514,7 @@ export default function NuevaLicenciaPage() {
                       max="23"
                       value={horaHasta}
                       onChange={(e) => setHoraHasta(e.target.value)}
-                      placeholder="23"
+                      placeholder="23 (opcional)"
                       className={inputClass}
                     />
                   </div>
@@ -624,7 +621,7 @@ export default function NuevaLicenciaPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                      Zonificación <span className="text-danger">*</span>
+                      Zonificación
                     </label>
                     <select
                       value={zonificacionId}
@@ -633,7 +630,7 @@ export default function NuevaLicenciaPage() {
                       className={selectClass}
                     >
                       <option value="">
-                        {loadingCatalogos ? 'Cargando...' : 'Seleccione una zonificación'}
+                        {loadingCatalogos ? 'Cargando...' : 'Seleccione una zonificación (opcional)'}
                       </option>
                       {zonificaciones.map((z) => (
                         <option key={z.id} value={z.id}>{z.nombre}</option>

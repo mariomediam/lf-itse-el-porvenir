@@ -584,10 +584,10 @@ class LicenciaFuncionamientoCreateSerializer(serializers.Serializer):
     nivel_riesgo_id          = serializers.IntegerField()
     actividad                = serializers.CharField(max_length=50)
     direccion                = serializers.CharField(max_length=250)
-    hora_desde               = serializers.IntegerField()
-    hora_hasta               = serializers.IntegerField()
+    hora_desde               = serializers.IntegerField(required=False, allow_null=True, default=None)
+    hora_hasta               = serializers.IntegerField(required=False, allow_null=True, default=None)
     resolucion_numero        = serializers.CharField(max_length=50)
-    zonificacion_id          = serializers.IntegerField()
+    zonificacion_id          = serializers.IntegerField(required=False, allow_null=True, default=None)
     area                     = serializers.DecimalField(max_digits=18, decimal_places=2)
     numero_recibo_pago       = serializers.CharField(
                                    max_length=20,
@@ -652,10 +652,10 @@ class LicenciaFuncionamientoUpdateSerializer(serializers.Serializer):
     nivel_riesgo_id          = serializers.IntegerField()
     actividad                = serializers.CharField(max_length=50)
     direccion                = serializers.CharField(max_length=250)
-    hora_desde               = serializers.IntegerField()
-    hora_hasta               = serializers.IntegerField()
+    hora_desde               = serializers.IntegerField(required=False, allow_null=True, default=None)
+    hora_hasta               = serializers.IntegerField(required=False, allow_null=True, default=None)
     resolucion_numero        = serializers.CharField(max_length=50)
-    zonificacion_id          = serializers.IntegerField()
+    zonificacion_id          = serializers.IntegerField(required=False, allow_null=True, default=None)
     area                     = serializers.DecimalField(max_digits=18, decimal_places=2)
     numero_recibo_pago       = serializers.CharField(
                                    max_length=20,
