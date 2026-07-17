@@ -395,7 +395,7 @@ class LicenciaFuncionamiento(models.Model):
         on_delete=models.PROTECT,
         db_column='nivel_riesgo_id',
     )
-    actividad = models.CharField(max_length=50)
+    actividad = models.CharField(max_length=500)
     direccion = models.CharField(max_length=250)
     hora_desde = models.IntegerField(null=True, blank=True)
     hora_hasta = models.IntegerField(null=True, blank=True)
