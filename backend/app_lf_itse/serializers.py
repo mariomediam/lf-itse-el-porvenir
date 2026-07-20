@@ -7,12 +7,6 @@ from . import models
 User = get_user_model()
 
 
-class TipoLetreroSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.TipoLetrero
-        fields = '__all__'
-
-
 class PlantillaGlosaLicenciaSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.PlantillaGlosaLicencia
@@ -601,7 +595,7 @@ class LicenciaFuncionamientoCreateSerializer(serializers.Serializer):
                                    allow_null=True,
                                )
     se_puede_publicar        = serializers.BooleanField(default=False)
-    tipo_letrero_id          = serializers.IntegerField()
+    tipo_letrero             = serializers.CharField(max_length=200)
     giros                    = _GiroItemSerializer(many=True)
     medidas                  = serializers.CharField(max_length=50, required=False, allow_blank=True, allow_null=True)
     glosa                    = serializers.CharField(required=False, allow_blank=True, allow_null=True)
@@ -669,7 +663,7 @@ class LicenciaFuncionamientoUpdateSerializer(serializers.Serializer):
                                    allow_null=True,
                                )
     se_puede_publicar        = serializers.BooleanField(default=False)
-    tipo_letrero_id          = serializers.IntegerField()
+    tipo_letrero             = serializers.CharField(max_length=200)
     giros                    = _GiroItemSerializer(many=True)
     medidas                  = serializers.CharField(max_length=50, required=False, allow_blank=True, allow_null=True)
     glosa                    = serializers.CharField(required=False, allow_blank=True, allow_null=True)

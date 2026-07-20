@@ -67,7 +67,6 @@ from .views import (
     TipoDocumentoIdentidadListView,
     PlantillaGlosaLicenciaListCreateView,
     PlantillaGlosaLicenciaDetailView,
-    TipoLetreroListView,
     TipoProcedimientoTupaDetailView,
     TipoProcedimientoTupaListView,
     UnidadOrganicaListView,
@@ -157,9 +156,6 @@ urlpatterns = [
 
     # Unidades orgánicas
     path('unidades-organicas/', UnidadOrganicaListView.as_view(), name='unidad-organica-list'),
-
-    # Tipos de letrero
-    path('tipos-letrero/', TipoLetreroListView.as_view(), name='tipo-letrero-list'),
 
     # Plantillas de glosa para licencias
     path('plantillas-glosa-licencia/', PlantillaGlosaLicenciaListCreateView.as_view(), name='plantilla-glosa-licencia-list'),
