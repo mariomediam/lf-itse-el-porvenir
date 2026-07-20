@@ -101,7 +101,6 @@ export default function NuevaLicenciaPage() {
   const [tiposLicencia,  setTiposLicencia]  = useState([])
   const [nivelesRiesgo,  setNivelesRiesgo]  = useState([])
   const [zonificaciones, setZonificaciones] = useState([])
-  const [tiposLetrero,   setTiposLetrero]   = useState([])
   const [loadingCatalogos, setLoadingCatalogos] = useState(true)
 
   // Datos principales
@@ -116,7 +115,7 @@ export default function NuevaLicenciaPage() {
   const [horaDesde,            setHoraDesde]            = useState('')
   const [horaHasta,            setHoraHasta]            = useState('')
   const [numeroReciboPago,     setNumeroReciboPago]     = useState('')
-  const [tipoLetreroId,        setTipoLetreroId]        = useState('')
+  const [tipoLetrero,          setTipoLetrero]          = useState('')
 
   // Titular y representante legal
   const [titular,      setTitular]      = useState(null)
@@ -161,14 +160,12 @@ export default function NuevaLicenciaPage() {
       licenciasApi.getTiposLicencia(),
       licenciasApi.getNivelesRiesgo(),
       licenciasApi.getZonificaciones(),
-      licenciasApi.getTiposLetrero(),
       licenciasApi.getPlantillasGlosa(),
     ])
-      .then(([tipos, niveles, zonas, letreros, glosas]) => {
+      .then(([tipos, niveles, zonas, glosas]) => {
         setTiposLicencia(tipos.data)
         setNivelesRiesgo(niveles.data)
         setZonificaciones(zonas.data)
-        setTiposLetrero(letreros.data)
         setPlantillasGlosa(glosas.data)
       })
       .catch(() => toast.error('Error al cargar los catálogos'))
@@ -245,7 +242,7 @@ export default function NuevaLicenciaPage() {
     if (!tipoLicenciaId)   { toast.error('Seleccione el tipo de licencia');            return }
     if (!resolucionNumero) { toast.error('Ingrese el número de resolución');           return }
     if (!nivelRiesgoId)    { toast.error('Seleccione el nivel de riesgo');             return }
-    if (!tipoLetreroId)    { toast.error('Seleccione el tipo de letrero');              return }
+    if (!tipoLetrero.trim()) { toast.error('Ingrese el tipo de letrero');               return }
     if (!titular)          { toast.error('Seleccione el titular de la licencia');      return }
     if (!representante)    { toast.error('Seleccione el representante legal');         return }
     if (!nombreComercial)  { toast.error('Ingrese el nombre comercial');               return }
@@ -286,7 +283,7 @@ export default function NuevaLicenciaPage() {
       numero_recibo_pago:      numeroReciboPago.trim(),
       observaciones:           observaciones.trim() || null,
       se_puede_publicar:       false,
-      tipo_letrero_id:         Number(tipoLetreroId),
+      tipo_letrero:            tipoLetrero.trim(),
       medidas:                 medidas.trim() || null,
       glosa:                   glosa.trim() || null,
       giros:                   giros.map((g) => ({ giro_id: g.id })),
@@ -538,19 +535,14 @@ export default function NuevaLicenciaPage() {
                     <label className="block text-xs font-medium text-gray-600 mb-1.5">
                       Tipo de letrero <span className="text-danger">*</span>
                     </label>
-                    <select
-                      value={tipoLetreroId}
-                      onChange={(e) => setTipoLetreroId(e.target.value)}
-                      disabled={loadingCatalogos}
-                      className={selectClass}
-                    >
-                      <option value="">
-                        {loadingCatalogos ? 'Cargando...' : 'Seleccione un tipo de letrero'}
-                      </option>
-                      {tiposLetrero.map((t) => (
-                        <option key={t.id} value={t.id}>{t.nombre}</option>
-                      ))}
-                    </select>
+                    <input
+                      type="text"
+                      value={tipoLetrero}
+                      onChange={(e) => setTipoLetrero(e.target.value)}
+                      maxLength={200}
+                      placeholder="Ej. 1 Letrero luminoso y 2 Letreros iluminados"
+                      className={inputClass}
+                    />
                   </div>
                 </div>
 
