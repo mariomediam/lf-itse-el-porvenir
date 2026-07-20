@@ -268,7 +268,7 @@ const LicenciaImprimirPage = () => {
               <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-end' }}>
                 <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', width: '34mm', flexShrink: 0 }}>GIRO O ACTIVIDAD</span>
                 <span style={{ whiteSpace: 'nowrap' }}>:</span>
-                <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>{girosTexto || '-'}</span>
+                <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>{licencia.actividad || '-'}</span>
               </div>
 
               {/* NOMBRE COMERCIAL */}
