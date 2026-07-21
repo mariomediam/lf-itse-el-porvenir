@@ -78,6 +78,7 @@ SELECT
     lf.tipo_letrero,
     lf.medidas,
     lf.glosa,
+    lf.dias_atencion,
     e.numero_expediente,
     e.fecha_recepcion,
     TRIM(
@@ -500,6 +501,7 @@ def crear_licencia(data: dict, usuario) -> LicenciaFuncionamiento:
             se_puede_publicar     = data.get('se_puede_publicar', False),
             tipo_letrero          = data['tipo_letrero'],
             medidas               = data.get('medidas'),
+            dias_atencion         = data.get('dias_atencion'),
             glosa                 = data.get('glosa'),
             usuario               = usuario,
             fecha_digitacion      = timezone.now(),
@@ -600,6 +602,7 @@ def modificar_licencia(licencia_id: int, data: dict, usuario=None) -> LicenciaFu
         licencia.se_puede_publicar      = data.get('se_puede_publicar', False)
         licencia.tipo_letrero           = data['tipo_letrero']
         licencia.medidas                = data.get('medidas')
+        licencia.dias_atencion          = data.get('dias_atencion')
         licencia.glosa                  = data.get('glosa')
         licencia.save()
 
