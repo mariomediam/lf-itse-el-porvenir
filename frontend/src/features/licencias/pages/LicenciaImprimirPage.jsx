@@ -308,11 +308,16 @@ const LicenciaImprimirPage = () => {
                     <span style={{ whiteSpace: 'nowrap' }}>:</span>
                     <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>{licencia.tipo_letrero_nombre || '-'}</span>
                   </div>
-                  <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-end', flex: 1 }}>
-                    <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', width: '34mm', flexShrink: 0, fontSize: '11.5px' }}>HORARIO DE ATENCIÓN</span>
-                    <span style={{ whiteSpace: 'nowrap' }}>:</span>
-                    <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>{licencia.tipo_letrero_nombre || '-'}</span>
-                  </div>
+
+                  {licencia.hora_desde && licencia.hora_hasta && (
+                    <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-end', flex: 1 }}>
+                      <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', width: '34mm', flexShrink: 0, fontSize: '11.5px' }}>HORARIO DE ATENCIÓN</span>
+                      <span style={{ whiteSpace: 'nowrap' }}>:</span>
+                      <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>{licencia.dias_atencion || ''} {`${licencia.hora_desde}:00 A ${licencia.hora_hasta}:00 HORAS`}</span>
+                    </div>
+                  )}
+
+
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-start', flexShrink: 0, width: '60mm' }}>
                   <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', lineHeight: '1.8' }}>MEDIDAS:</span>

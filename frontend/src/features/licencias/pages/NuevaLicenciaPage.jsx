@@ -116,6 +116,7 @@ export default function NuevaLicenciaPage() {
   const [horaHasta,            setHoraHasta]            = useState('')
   const [numeroReciboPago,     setNumeroReciboPago]     = useState('')
   const [tipoLetrero,          setTipoLetrero]          = useState('')
+  const [diasAtencion,         setDiasAtencion]         = useState('')
 
   // Titular y representante legal
   const [titular,      setTitular]      = useState(null)
@@ -287,6 +288,7 @@ export default function NuevaLicenciaPage() {
       medidas:                 medidas.trim() || null,
       glosa:                   glosa.trim() || null,
       giros:                   giros.map((g) => ({ giro_id: g.id })),
+      dias_atencion:           diasAtencion.trim() || null,
     }
 
     setSubmitting(true)
@@ -486,6 +488,18 @@ export default function NuevaLicenciaPage() {
                         <option key={n.id} value={n.id}>{n.nombre}</option>
                       ))}
                     </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                      Días de atención
+                    </label>
+                    <input
+                      type="text"
+                      value={diasAtencion}
+                      onChange={(e) => setDiasAtencion(e.target.value)}
+                      placeholder="Lunes a Viernes (opcional)"
+                      className={inputClass}
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1.5">

@@ -115,6 +115,7 @@ export default function ModificarLicenciaPage() {
   const [horaHasta,            setHoraHasta]            = useState('')
   const [numeroReciboPago,     setNumeroReciboPago]     = useState('')
   const [tipoLetrero,          setTipoLetrero]          = useState('')
+  const [diasAtencion,         setDiasAtencion]         = useState('')
 
   // Titular y representante legal
   const [titular,       setTitular]      = useState(null)
@@ -204,6 +205,7 @@ export default function ModificarLicenciaPage() {
         setHoraHasta(lf.hora_hasta != null ? String(lf.hora_hasta) : '')
         setNumeroReciboPago(lf.numero_recibo_pago ?? '')
         setTipoLetrero(lf.tipo_letrero ?? '')
+        setDiasAtencion(lf.dias_atencion ?? '')
 
         // Establecimiento
         setNombreComercial(lf.nombre_comercial ?? '')
@@ -310,6 +312,7 @@ export default function ModificarLicenciaPage() {
       medidas:                  medidas.trim() || null,
       glosa:                    glosa.trim() || null,
       giros:                    giros.map((g) => ({ giro_id: g.id })),
+      dias_atencion:            diasAtencion.trim() || null,
     }
 
     setSubmitting(true)
@@ -524,6 +527,20 @@ export default function ModificarLicenciaPage() {
                       ))}
                     </select>
                   </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                      Días de atención
+                    </label>
+                    <input
+                      type="text"
+                      value={diasAtencion}
+                      onChange={(e) => setDiasAtencion(e.target.value)}
+                      placeholder="Lunes a Viernes (opcional)"
+                      className={inputClass}
+                    />
+                  </div>
+
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1.5">
                       Hora desde
