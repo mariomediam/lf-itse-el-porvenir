@@ -517,7 +517,7 @@ export default function NuevaLicenciaPage() {
                   </div>
                 </div>
 
-                {/* Fila 4: Recibo, Tipo de letrero */}
+                {/* Fila 4: Recibo */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1.5">
@@ -528,19 +528,6 @@ export default function NuevaLicenciaPage() {
                       value={numeroReciboPago}
                       onChange={(e) => setNumeroReciboPago(e.target.value)}
                       placeholder="Ej. 00567587 (opcional)"
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                      Tipo de letrero <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={tipoLetrero}
-                      onChange={(e) => setTipoLetrero(e.target.value)}
-                      maxLength={200}
-                      placeholder="Ej. 1 Letrero luminoso y 2 Letreros iluminados"
                       className={inputClass}
                     />
                   </div>
@@ -643,6 +630,20 @@ export default function NuevaLicenciaPage() {
                       className={inputClass}
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                    Tipo de letrero <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={tipoLetrero}
+                    onChange={(e) => setTipoLetrero(e.target.value)}
+                    maxLength={200}
+                    placeholder="Ej. 1 Letrero luminoso y 2 Letreros iluminados"
+                    className={inputClass}
+                  />
                 </div>
 
                 <div>
