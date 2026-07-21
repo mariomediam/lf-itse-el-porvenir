@@ -6,7 +6,7 @@ import { personasApi } from '@api/personasApi'
 import { configPublicaApi } from '@api/configPublicaApi'
 
 const CODIGO_DNI = '01'
-const CODIGO_CE  = '04'
+const CODIGO_CE = '04'
 
 const MESES = [
   'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -196,7 +196,7 @@ const LicenciaImprimirPage = () => {
               {/* Expediente + Vencimiento */}
               <div style={{ textAlign: 'right' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '2mm', marginBottom: '3mm' }}>
-                  
+
                   <span style={{
                     // border: '1px solid #4a2000',
                     padding: '1.5mm 4mm',
@@ -211,7 +211,7 @@ const LicenciaImprimirPage = () => {
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3mm' }}>
-                  
+
                   <span style={{
                     // border: '1px solid #4a2000',
                     padding: '1.5mm 4mm',
@@ -292,7 +292,7 @@ const LicenciaImprimirPage = () => {
                 <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>
                   {licencia.area != null ? `${Number(licencia.area).toFixed(0)} m²` : '-'}
                 </span>
-                <div style={{ display: 'flex', alignItems: 'flex-end', flexShrink: 0, width: '75mm' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', flexShrink: 0, width: '78mm' }}>
                   <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>CÓDIGO CATASTRAL:</span>
                   <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', marginLeft: '2mm', minWidth: 0, textAlign: 'center' }}>
                     {licencia.zonificacion_codigo || '-'}
@@ -301,15 +301,28 @@ const LicenciaImprimirPage = () => {
               </div>
 
               {/* TIPO DE ANUNCIO + MEDIDA */}
-              <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-end' }}>
-                <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', width: '34mm', flexShrink: 0 }}>TIPO DE ANUNCIO</span>
-                <span style={{ whiteSpace: 'nowrap' }}>:</span>
-                <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>{licencia.tipo_letrero_nombre || '-'}</span>
-                <div style={{ display: 'flex', alignItems: 'flex-end', flexShrink: 0, width: '75mm' }}>
-                  <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>MEDIDA:</span>
-                  <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', marginLeft: '2mm', minWidth: 0, textAlign: 'center' }}>
-                    {licencia.medidas || '-'}
-                  </span>
+              <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-end', flex: 1 }}>
+                    <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', width: '34mm', flexShrink: 0 }}>TIPO DE ANUNCIO</span>
+                    <span style={{ whiteSpace: 'nowrap' }}>:</span>
+                    <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>{licencia.tipo_letrero_nombre || '-'}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-end', flex: 1 }}>
+                    <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', width: '34mm', flexShrink: 0, fontSize: '11.5px' }}>HORARIO DE ATENCIÓN</span>
+                    <span style={{ whiteSpace: 'nowrap' }}>:</span>
+                    <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>{licencia.tipo_letrero_nombre || '-'}</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', flexShrink: 0, width: '60mm' }}>
+                  <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', lineHeight: '1.8' }}>MEDIDAS:</span>
+                  <div style={{ flex: 1, marginLeft: '2mm', minWidth: 0 }}>
+                    {(licencia.medidas || '-').split(';').map((medida, idx) => (
+                      <div key={idx} style={{ fontWeight: 'bold', borderBottom: '1px solid #4a2000', textAlign: 'center', lineHeight: '1.8' }}>
+                        {medida.trim()}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
