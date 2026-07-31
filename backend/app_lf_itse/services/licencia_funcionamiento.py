@@ -499,7 +499,7 @@ def crear_licencia(data: dict, usuario) -> LicenciaFuncionamiento:
             numero_recibo_pago    = data['numero_recibo_pago'],
             observaciones         = data.get('observaciones'),
             se_puede_publicar     = data.get('se_puede_publicar', False),
-            tipo_letrero          = data['tipo_letrero'],
+            tipo_letrero          = data.get('tipo_letrero'),
             medidas               = data.get('medidas'),
             dias_atencion         = data.get('dias_atencion'),
             glosa                 = data.get('glosa'),
@@ -600,7 +600,7 @@ def modificar_licencia(licencia_id: int, data: dict, usuario=None) -> LicenciaFu
         licencia.numero_recibo_pago     = data['numero_recibo_pago']
         licencia.observaciones          = data.get('observaciones')
         licencia.se_puede_publicar      = data.get('se_puede_publicar', False)
-        licencia.tipo_letrero           = data['tipo_letrero']
+        licencia.tipo_letrero           = data.get('tipo_letrero')
         licencia.medidas                = data.get('medidas')
         licencia.dias_atencion          = data.get('dias_atencion')
         licencia.glosa                  = data.get('glosa')

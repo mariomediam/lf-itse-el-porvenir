@@ -410,7 +410,7 @@ class LicenciaFuncionamiento(models.Model):
         related_name='licencias_funcionamiento_digitadas',
     )
     fecha_digitacion = models.DateTimeField(default=timezone.now)
-    tipo_letrero = models.CharField(max_length=200)
+    tipo_letrero = models.CharField(max_length=200, blank=True, null=True)
     medidas = models.CharField(max_length=500, blank=True, null=True)
     glosa = models.TextField(blank=True, null=True)
     dias_atencion = models.CharField(max_length=50, blank=True, null=True)

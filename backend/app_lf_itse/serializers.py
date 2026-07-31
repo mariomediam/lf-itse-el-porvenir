@@ -595,7 +595,7 @@ class LicenciaFuncionamientoCreateSerializer(serializers.Serializer):
                                    allow_null=True,
                                )
     se_puede_publicar        = serializers.BooleanField(default=False)
-    tipo_letrero             = serializers.CharField(max_length=200)
+    tipo_letrero             = serializers.CharField(max_length=200, required=False, allow_blank=True, allow_null=True)
     giros                    = _GiroItemSerializer(many=True)
     medidas                  = serializers.CharField(max_length=500, required=False, allow_blank=True, allow_null=True)
     glosa                    = serializers.CharField(required=False, allow_blank=True, allow_null=True)
@@ -664,7 +664,7 @@ class LicenciaFuncionamientoUpdateSerializer(serializers.Serializer):
                                    allow_null=True,
                                )
     se_puede_publicar        = serializers.BooleanField(default=False)
-    tipo_letrero             = serializers.CharField(max_length=200)
+    tipo_letrero             = serializers.CharField(max_length=200, required=False, allow_blank=True, allow_null=True)
     giros                    = _GiroItemSerializer(many=True)
     medidas                  = serializers.CharField(max_length=500, required=False, allow_blank=True, allow_null=True)
     glosa                    = serializers.CharField(required=False, allow_blank=True, allow_null=True)

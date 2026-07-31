@@ -243,7 +243,7 @@ export default function NuevaLicenciaPage() {
     if (!tipoLicenciaId)   { toast.error('Seleccione el tipo de licencia');            return }
     if (!resolucionNumero) { toast.error('Ingrese el número de resolución');           return }
     if (!nivelRiesgoId)    { toast.error('Seleccione el nivel de riesgo');             return }
-    if (!tipoLetrero.trim()) { toast.error('Ingrese el tipo de letrero');               return }
+    
     if (!titular)          { toast.error('Seleccione el titular de la licencia');      return }
     if (!representante)    { toast.error('Seleccione el representante legal');         return }
     if (!nombreComercial)  { toast.error('Ingrese el nombre comercial');               return }
@@ -284,7 +284,7 @@ export default function NuevaLicenciaPage() {
       numero_recibo_pago:      numeroReciboPago.trim(),
       observaciones:           observaciones.trim() || null,
       se_puede_publicar:       false,
-      tipo_letrero:            tipoLetrero.trim(),
+      tipo_letrero:            tipoLetrero.trim() || null,
       medidas:                 medidas.trim() || null,
       glosa:                   glosa.trim() || null,
       giros:                   giros.map((g) => ({ giro_id: g.id })),
@@ -648,14 +648,14 @@ export default function NuevaLicenciaPage() {
 
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                    Tipo de letrero <span className="text-danger">*</span>
+                    Tipo de letrero
                   </label>
                   <input
                     type="text"
                     value={tipoLetrero}
                     onChange={(e) => setTipoLetrero(e.target.value)}
                     maxLength={200}
-                    placeholder="Ej. 1 Letrero luminoso y 2 Letreros iluminados"
+                    placeholder="Ej. 1 Letrero luminoso y 2 Letreros iluminados (opcional)"
                     className={inputClass}
                   />
                 </div>
