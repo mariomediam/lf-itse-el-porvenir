@@ -482,7 +482,7 @@ def crear_licencia(data: dict, usuario) -> LicenciaFuncionamiento:
             numero_licencia       = numero_licencia,
             fecha_emision         = data['fecha_emision'],
             titular_id            = data['titular_id'],
-            conductor_id          = data['conductor_id'],
+            conductor_id          = data.get('conductor_id'),
             licencia_principal_id = data.get('licencia_principal_id'),
             nombre_comercial      = data['nombre_comercial'],
             es_vigencia_indeterminada = es_indeterminada,
@@ -583,7 +583,7 @@ def modificar_licencia(licencia_id: int, data: dict, usuario=None) -> LicenciaFu
         licencia.numero_licencia        = data['numero_licencia']
         licencia.fecha_emision          = data['fecha_emision']
         licencia.titular_id             = data['titular_id']
-        licencia.conductor_id           = data['conductor_id']
+        licencia.conductor_id           = data.get('conductor_id')
         licencia.licencia_principal_id  = data.get('licencia_principal_id')
         licencia.nombre_comercial       = data['nombre_comercial']
         licencia.es_vigencia_indeterminada = es_indeterminada

@@ -365,6 +365,8 @@ class LicenciaFuncionamiento(models.Model):
         Persona,
         on_delete=models.PROTECT,
         db_column='conductor_id',
+        null=True,
+        blank=True,
         related_name='licencias_funcionamiento_conductor',
     )
     licencia_principal = models.ForeignKey(
@@ -397,7 +399,7 @@ class LicenciaFuncionamiento(models.Model):
         blank=True,
     )
     area = models.DecimalField(max_digits=18, decimal_places=2)
-    numero_recibo_pago = models.CharField(max_length=20)
+    numero_recibo_pago = models.CharField(max_length=20, blank=True, null=True)
     observaciones = models.TextField(blank=True, null=True)
     # dias_atencion = models.CharField(max_length=50, blank=True, null=True)
     # numero_folios = models.CharField(max_length=50, blank=True, null=True)

@@ -269,7 +269,6 @@ export default function ModificarLicenciaPage() {
     if (!nivelRiesgoId)    { toast.error('Seleccione el nivel de riesgo');             return }
     
     if (!titular)          { toast.error('Seleccione el titular de la licencia');      return }
-    if (!representante)    { toast.error('Seleccione el representante legal');         return }
     if (!nombreComercial)  { toast.error('Ingrese el nombre comercial');               return }
     if (!actividad)        { toast.error('Ingrese la actividad económica');            return }
     if (!direccion)        { toast.error('Ingrese la dirección del local');            return }
@@ -291,7 +290,7 @@ export default function ModificarLicenciaPage() {
       numero_licencia:          Number(numeroLicencia),
       fecha_emision:            fechaEmision,
       titular_id:               titular.data.id,
-      conductor_id:             representante.data.id,
+      conductor_id:             representante?.data?.id ?? null,
       licencia_principal_id:    null,
       nombre_comercial:         nombreComercial.trim(),
       es_vigencia_indeterminada: esVigenciaIndeter,
@@ -600,8 +599,7 @@ export default function ModificarLicenciaPage() {
                   onChange={setTitular}
                 />
                 <SelectorPersona
-                  label="Representante legal"
-                  required
+                  label="Representante legal (opcional)"
                   value={representante}
                   onChange={setRepresentante}
                 />
