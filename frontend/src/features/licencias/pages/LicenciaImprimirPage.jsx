@@ -295,19 +295,22 @@ const LicenciaImprimirPage = () => {
                 <div style={{ display: 'flex', alignItems: 'flex-end', flexShrink: 0, width: '78mm' }}>
                   <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>CÓDIGO CATASTRAL:</span>
                   <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', marginLeft: '2mm', minWidth: 0, textAlign: 'center' }}>
-                    {licencia.zonificacion_codigo || '-'}
+                    {licencia.zonificacion_codigo || 'RDM'}
                   </span>
                 </div>
               </div>
 
               {/* TIPO DE ANUNCIO + MEDIDA */}
+
               <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-start' }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-end', flex: 1 }}>
-                    <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', width: '34mm', flexShrink: 0 }}>TIPO DE ANUNCIO</span>
-                    <span style={{ whiteSpace: 'nowrap' }}>:</span>
-                    <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>{licencia.tipo_letrero_nombre || '-'}</span>
-                  </div>
+                  {licencia.tipo_letrero_nombre && (
+                    <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-end', flex: 1 }}>
+                      <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', width: '34mm', flexShrink: 0 }}>TIPO DE ANUNCIO</span>
+                      <span style={{ whiteSpace: 'nowrap' }}>:</span>
+                      <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>{licencia.tipo_letrero_nombre || '-'}</span>
+                    </div>
+                  )}
 
                   {licencia.hora_desde && licencia.hora_hasta && (
                     <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-end', flex: 1 }}>
@@ -320,14 +323,18 @@ const LicenciaImprimirPage = () => {
 
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-start', flexShrink: 0, width: '60mm' }}>
-                  <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', lineHeight: '1.8' }}>MEDIDAS:</span>
-                  <div style={{ flex: 1, marginLeft: '2mm', minWidth: 0 }}>
-                    {(licencia.medidas || '-').split(';').map((medida, idx) => (
-                      <div key={idx} style={{ fontWeight: 'bold', borderBottom: '1px solid #4a2000', textAlign: 'center', lineHeight: '1.8' }}>
-                        {medida.trim()}
+                  {licencia.medidas && (
+                    <>
+                      <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', lineHeight: '1.8' }}>MEDIDAS:</span>
+                      <div style={{ flex: 1, marginLeft: '2mm', minWidth: 0 }}>
+                        {(licencia.medidas || '-').split(';').map((medida, idx) => (
+                          <div key={idx} style={{ fontWeight: 'bold', borderBottom: '1px solid #4a2000', textAlign: 'center', lineHeight: '1.8' }}>
+                            {medida.trim()}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
