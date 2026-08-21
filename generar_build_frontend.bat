@@ -20,6 +20,7 @@ echo.
 echo [1/3] Compilando frontend con Docker...
 docker build -f frontend/Dockerfile.prod --target builder -t frontend-builder ./frontend
 
+
 if errorlevel 1 (
     echo.
     echo ERROR: Fallo la compilacion del frontend.
@@ -42,6 +43,7 @@ echo.
 echo Extrayendo carpeta dist...
 docker cp temp-extract:/app/dist ./frontend/dist
 
+
 if errorlevel 1 (
     echo.
     echo ERROR: No se pudo copiar la carpeta dist.
@@ -57,8 +59,6 @@ docker rm temp-extract
 echo.
 echo ============================================================
 echo BUILD GENERADO CORRECTAMENTE
-echo Ruta:
-echo D:\Mario\apps\lf-itse\frontend\dist
 echo ============================================================
 echo.
 
