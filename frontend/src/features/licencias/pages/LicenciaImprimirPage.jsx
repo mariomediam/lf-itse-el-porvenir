@@ -126,18 +126,38 @@ const LicenciaImprimirPage = () => {
   return (
     <>
       <style>{`
+        @page {
+          size: 240mm 160mm;
+          margin: 0;
+        }
         @media print {
-          @page { size: 240mm 160mm; margin: 0; }
-          html, body { margin: 0; padding: 0; }
+          html, body {
+            width: 240mm;
+            height: 160mm;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+          }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .no-print { display: none !important; }
-          .fondo-gris { background: none !important; padding: 0 !important; }
-          .hoja { margin: 0 !important; box-shadow: none !important; }
+          .fondo-gris {
+            background: none !important;
+            padding: 0 !important;
+            min-height: 0 !important;
+            width: 240mm;
+            height: 160mm;
+          }
+          .hoja {
+            margin: 0 !important;
+            box-shadow: none !important;
+            width: 240mm !important;
+            height: 160mm !important;
+          }
         }
       `}</style>
 
       {/* Barra de acciones */}
-      <div className="no-print bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-3 shadow-sm sticky top-0 z-10">
+      <div className="no-print bg-white border-b border-gray-200 px-6 py-3 flex flex-wrap items-center gap-3 shadow-sm sticky top-0 z-10">
         <button onClick={() => window.print()}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,6 +176,11 @@ const LicenciaImprimirPage = () => {
         <span className="text-sm text-gray-500 ml-2">
           Vista previa — LIC. N° {numLic}
         </span>
+        {/* <p className="w-full text-xs text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+          En el diálogo de impresión elija tamaño de papel <strong>240 × 160 mm</strong>,
+          escala <strong>100%</strong> y márgenes <strong>Ninguno</strong>.
+          No use A4 ni “Ajustar al papel”.
+        </p> */}
       </div>
 
       {/* Fondo gris */}
