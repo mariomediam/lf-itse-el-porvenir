@@ -4066,3 +4066,335 @@ class BuscarItsePublicaView(APIView):
             })
 
         return Response(resultados)
+
+
+# ── PDF de licencia de funcionamiento ────────────────────────────────────────
+
+class LicenciaFuncionamientoPdfView(APIView):
+    """
+    GET /api/lf-itse/licencias-funcionamiento/<pk>/pdf/
+
+    Genera y retorna un PDF del certificado de licencia de funcionamiento
+    con tamaño de página 240 mm × 160 mm.
+
+    Requiere autenticación JWT.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    PAGE_W_MM = 240
+    PAGE_H_MM = 160
+
+    MESES = [
+        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+    ]
+
+    def get(self, request, pk):
+        from io import BytesIO
+
+        import qrcode
+        from reportlab.lib.units import mm
+        from reportlab.lib.utils import ImageReader
+        from reportlab.pdfgen import canvas as pdf_canvas
+
+        from .models import (
+            LicenciaFuncionamientoGiro,
+            PersonaDocumento,
+        )
+        from .services.licencia_funcionamiento import buscar_licencias
+
+        rows = buscar_licencias('ID', str(pk))
+        if not rows:
+            return Response(
+                {'error': 'Licencia de funcionamiento no encontrada.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        lic = rows[0]
+
+        giros_qs = (
+            LicenciaFuncionamientoGiro.objects
+            .filter(licencia_funcionamiento_id=pk)
+            .select_related('giro')
+        )
+        giros_nombres = [g.giro.nombre for g in giros_qs]
+
+        doc_titular_texto = ''
+        titular_id = lic.get('titular_id')
+        if titular_id:
+            doc = (
+                PersonaDocumento.objects
+                .filter(persona_id=titular_id, tipo_documento_identidad__codigo__in=['01', '04'])
+                .select_related('tipo_documento_identidad')
+                .order_by('tipo_documento_identidad__codigo')
+                .first()
+            )
+            if doc:
+                doc_titular_texto = f'{doc.tipo_documento_identidad.nombre} N\u00b0{doc.numero_documento}'
+
+        anio_emision = lic['fecha_emision'].year if lic.get('fecha_emision') else ''
+        num_lic = f"{str(lic['numero_licencia']).zfill(4)}-{anio_emision}"
+
+        num_exp_raw = lic.get('numero_expediente', '')
+        anio_recepcion = ''
+        if lic.get('fecha_recepcion'):
+            fr = lic['fecha_recepcion']
+            anio_recepcion = fr.year if hasattr(fr, 'year') else ''
+        num_exp = f"{num_exp_raw}-{anio_recepcion}"
+
+        if lic.get('es_vigencia_indeterminada'):
+            vencimiento = 'INDEFINIDA'
+        elif lic.get('fecha_inicio_vigencia') and lic.get('fecha_fin_vigencia'):
+            fi = lic['fecha_inicio_vigencia']
+            ff = lic['fecha_fin_vigencia']
+            vencimiento = f"{fi.strftime('%d/%m/%Y')} - {ff.strftime('%d/%m/%Y')}"
+        else:
+            vencimiento = '-'
+
+        titular_nombre = (lic.get('titular_nombre') or '').upper()
+        titular_ruc = lic.get('titular_ruc') or ''
+        nombre_comercial = (lic.get('nombre_comercial') or '').upper()
+        direccion = (lic.get('direccion') or '').upper()
+        actividad = lic.get('actividad') or '-'
+        area_val = lic.get('area')
+        area_texto = f"{int(area_val)} m\u00b2" if area_val is not None else '-'
+        zonificacion_codigo = lic.get('zonificacion_codigo') or 'RDM'
+        tipo_letrero = lic.get('tipo_letrero_nombre') or ''
+        medidas = lic.get('medidas') or ''
+        hora_desde = lic.get('hora_desde')
+        hora_hasta = lic.get('hora_hasta')
+        dias_atencion = lic.get('dias_atencion') or ''
+        glosa = lic.get('glosa') or ''
+
+        fecha_larga = ''
+        if lic.get('fecha_emision'):
+            fe = lic['fecha_emision']
+            fecha_larga = f"{str(fe.day).zfill(2)} de {self.MESES[fe.month - 1]} del {fe.year}"
+
+        qr_habilitado = django_settings.QR_VERIFICACION_HABILITADO
+        qr_url_base = django_settings.QR_URL_VERIFICAR_LICENCIA
+        lic_uuid = str(lic.get('uuid') or '')
+        qr_url = None
+        if qr_habilitado and qr_url_base and lic_uuid:
+            qr_url = f"{qr_url_base.rstrip('/')}/{lic_uuid}"
+
+        # ── Build PDF ──
+        page_w = self.PAGE_W_MM * mm
+        page_h = self.PAGE_H_MM * mm
+        buf = BytesIO()
+        c = pdf_canvas.Canvas(buf, pagesize=(page_w, page_h))
+
+        color_brown = (74 / 255, 32 / 255, 0)
+
+        def set_brown():
+            c.setFillColorRGB(*color_brown)
+            c.setStrokeColorRGB(*color_brown)
+
+        set_brown()
+
+        # CSS px to PDF pt: 1 CSS px ≈ 0.75 pt
+        def px(css_px):
+            return css_px * 0.75
+
+        # Margins matching HTML: padding 8mm top, 12mm sides
+        pad_top = 8 * mm
+        pad_side = 12 * mm
+        # Fields inner padding: additional 9mm each side
+        fields_pad = 9 * mm
+        fields_x = pad_side + fields_pad
+        fields_right = page_w - pad_side - fields_pad
+
+        # Font sizes matching CSS px → pt
+        fs_numlic = px(20)       # 20px
+        fs_exp = px(18)          # 18px
+        fs_title = px(18)        # 18px
+        fs_subtitle = px(8.5)    # 8.5px
+        fs_field = px(12)        # 12px
+        fs_horario_label = px(11.5)
+        fs_glosa = px(12.5)
+
+        label_w = 34 * mm
+        line_h = px(12) * 1.8    # 12px * 1.8 line-height
+
+        def wrap_text(text, font_name, font_size, max_width):
+            """Split text into lines that fit within max_width."""
+            words = str(text).split()
+            lines = []
+            current = ''
+            for word in words:
+                test = f'{current} {word}'.strip()
+                if c.stringWidth(test, font_name, font_size) <= max_width:
+                    current = test
+                else:
+                    if current:
+                        lines.append(current)
+                    current = word
+            if current:
+                lines.append(current)
+            return lines or ['']
+
+        def draw_field(label, value, y_pos, label_font_size=fs_field, right_limit=None):
+            """Draw a label: value field with underline, wrapping long values."""
+            if right_limit is None:
+                right_limit = fields_right
+            c.setFont('Helvetica-Bold', label_font_size)
+            c.drawString(fields_x, y_pos, label)
+            colon_x = fields_x + label_w
+            c.setFont('Helvetica-Bold', fs_field)
+            c.drawString(colon_x, y_pos, ':')
+            value_x = colon_x + 2 * mm
+            available_w = right_limit - value_x
+            lines = wrap_text(value, 'Helvetica-Bold', fs_field, available_w)
+            c.setLineWidth(0.5)
+            for i, text_line in enumerate(lines):
+                ly = y_pos - (i * line_h)
+                c.setFont('Helvetica-Bold', fs_field)
+                c.drawString(value_x, ly, text_line)
+                c.line(value_x, ly - 1, right_limit, ly - 1)
+            total_lines = len(lines)
+            return y_pos - (total_lines * line_h)
+
+        # ── License number box ──
+        box_x = pad_side + 52 * mm
+        box_y = page_h - pad_top - 18 * mm - px(20) - 2 * mm
+        c.setFont('Helvetica-Bold', fs_numlic)
+        text_w = c.stringWidth(num_lic, 'Helvetica-Bold', fs_numlic)
+        box_pad_x = 5 * mm
+        box_pad_y = 2 * mm
+        box_h = fs_numlic + box_pad_y * 2
+        c.setLineWidth(3.5)
+        c.rect(box_x, box_y, text_w + box_pad_x * 2, box_h)
+        c.drawString(box_x + box_pad_x, box_y + box_pad_y, num_lic)
+
+        # ── Expediente (top right) ──
+        c.setFont('Helvetica-Bold', fs_exp)
+        exp_x = page_w - pad_side - 33 * mm
+        exp_y = page_h - pad_top - 14 * mm - fs_exp
+        c.drawRightString(exp_x, exp_y, num_exp)
+
+        # ── Vencimiento (below expediente) ──
+        venc_x = page_w - pad_side - 23 * mm
+        venc_y = exp_y - 3 * mm - fs_exp
+        c.setFont('Helvetica-Bold', fs_exp)
+        c.drawRightString(venc_x, venc_y, vencimiento)
+
+        # ── Title ──
+        title_y = box_y - 2 * mm - fs_title
+        c.setFont('Helvetica-Bold', fs_title)
+        c.drawCentredString(page_w / 2, title_y, 'CERTIFICADO DE LICENCIA DE FUNCIONAMIENTO')
+
+        subtitle_y = title_y - 1 * mm - fs_subtitle
+        c.setFont('Helvetica', fs_subtitle)
+        c.drawCentredString(
+            page_w / 2, subtitle_y,
+            u'Ley Org\u00e1nica de Municipalidades N\u00b0 27972, '
+            u'Ley Marco de Licencia de Funcionamiento N\u00b0 28976.',
+        )
+
+        # ── Fields ──
+        current_y = subtitle_y - 3 * mm - line_h
+
+        # OTORGADO A
+        otorgado_value = titular_nombre
+        if doc_titular_texto:
+            otorgado_value += f'    {doc_titular_texto}'
+        if titular_ruc:
+            otorgado_value += f'    RUC N\u00b0{titular_ruc}'
+        current_y = draw_field('OTORGADO A', otorgado_value, current_y)
+
+        # GIRO O ACTIVIDAD
+        current_y = draw_field('GIRO O ACTIVIDAD', actividad, current_y)
+
+        # NOMBRE COMERCIAL
+        current_y = draw_field('NOMBRE COMERCIAL', nombre_comercial, current_y)
+
+        # DIRECCI\u00d3N
+        current_y = draw_field(u'DIRECCI\u00d3N', direccion, current_y)
+
+        # \u00c1REA COMERCIAL + C\u00d3DIGO CATASTRAL (split row)
+        catastral_zone_w = 78 * mm
+        area_right = fields_right - catastral_zone_w
+        c.setFont('Helvetica-Bold', fs_field)
+        c.drawString(fields_x, current_y, u'\u00c1REA COMERCIAL')
+        c.drawString(fields_x + label_w, current_y, ':')
+        area_value_x = fields_x + label_w + 2 * mm
+        c.drawString(area_value_x, current_y, area_texto)
+        c.setLineWidth(0.5)
+        c.line(area_value_x, current_y - 1, area_right, current_y - 1)
+
+        catastral_x = area_right + 2 * mm
+        cat_label = u'C\u00d3DIGO CATASTRAL:'
+        c.drawString(catastral_x, current_y, cat_label)
+        cat_label_w = c.stringWidth(cat_label, 'Helvetica-Bold', fs_field)
+        cat_value_x = catastral_x + cat_label_w + 2 * mm
+        c.drawString(cat_value_x, current_y, zonificacion_codigo)
+        c.line(cat_value_x, current_y - 1, fields_right, current_y - 1)
+        current_y -= line_h
+
+        # TIPO DE ANUNCIO (optional) + MEDIDAS
+        if tipo_letrero:
+            medidas_zone_w = 60 * mm if medidas else 0
+            anuncio_right = fields_right - medidas_zone_w if medidas else fields_right
+            current_y = draw_field('TIPO DE ANUNCIO', tipo_letrero, current_y, right_limit=anuncio_right)
+
+            if medidas:
+                medidas_x = fields_right - medidas_zone_w + 2 * mm
+                row_y = current_y + line_h
+                c.setFont('Helvetica-Bold', fs_field)
+                c.drawString(medidas_x, row_y, 'MEDIDAS:')
+                medidas_val_x = medidas_x + c.stringWidth('MEDIDAS:', 'Helvetica-Bold', fs_field) + 2 * mm
+                c.setLineWidth(0.5)
+                for i, medida in enumerate(medidas.split(';')):
+                    y_m = row_y - (i * line_h)
+                    c.drawString(medidas_val_x, y_m, medida.strip())
+                    c.line(medidas_val_x, y_m - 1, fields_right, y_m - 1)
+
+        # HORARIO DE ATENCI\u00d3N (optional)
+        if hora_desde and hora_hasta:
+            horario_texto = f'{dias_atencion} {hora_desde}:00 A {hora_hasta}:00 HORAS'
+            current_y = draw_field(
+                u'HORARIO DE ATENCI\u00d3N', horario_texto, current_y,
+                label_font_size=fs_horario_label,
+            )
+
+        # ── GLOSA ──
+        if glosa:
+            current_y -= 1 * mm
+            c.setFont('Helvetica-Bold', fs_glosa)
+            glosa_w = fields_right - fields_x
+            for raw_line in glosa.split('\n'):
+                wrapped = wrap_text(raw_line.strip(), 'Helvetica-Bold', fs_glosa, glosa_w)
+                for wl in wrapped:
+                    c.drawString(fields_x, current_y, wl)
+                    current_y -= px(12.5) * 1.4
+
+        # ── FECHA ──
+        current_y -= 1 * mm
+        c.setFont('Helvetica-Bold', fs_glosa)
+        c.drawRightString(fields_right, current_y, f'El Porvenir, {fecha_larga}')
+
+        # ── QR ──
+        if qr_url:
+            qr_img = qrcode.make(qr_url, box_size=6, border=1)
+            qr_buf = BytesIO()
+            qr_img.save(qr_buf, format='PNG')
+            qr_buf.seek(0)
+            qr_reader = ImageReader(qr_buf)
+            qr_size = 18 * mm
+            qr_x = pad_side + 17 * mm
+            qr_y = 25 * mm
+            c.drawImage(qr_reader, qr_x, qr_y, qr_size, qr_size)
+            c.setFont('Helvetica', px(6))
+            c.drawCentredString(qr_x + qr_size / 2, qr_y - 3 * mm, 'Verificar documento')
+
+        c.showPage()
+        c.save()
+
+        buf.seek(0)
+        response = FileResponse(
+            buf,
+            content_type='application/pdf',
+            filename=f'licencia_{num_lic}.pdf',
+        )
+        response['Content-Disposition'] = f'inline; filename="licencia_{num_lic}.pdf"'
+        return response

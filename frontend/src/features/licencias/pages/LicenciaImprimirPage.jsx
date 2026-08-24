@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { QRCode } from 'react-qr-code'
+import { toast } from 'sonner'
 import { licenciasApi } from '@api/licenciasApi'
 import { personasApi } from '@api/personasApi'
 import { configPublicaApi } from '@api/configPublicaApi'
@@ -158,13 +159,22 @@ const LicenciaImprimirPage = () => {
 
       {/* Barra de acciones */}
       <div className="no-print bg-white border-b border-gray-200 px-6 py-3 flex flex-wrap items-center gap-3 shadow-sm sticky top-0 z-10">
-        <button onClick={() => window.print()}
+        <button onClick={async () => {
+            try {
+              const res = await licenciasApi.descargarPdf(id)
+              const blob = new Blob([res.data], { type: 'application/pdf' })
+              const url = URL.createObjectURL(blob)
+              window.open(url, '_blank')
+            } catch {
+              toast.error('Error al generar el PDF de la licencia')
+            }
+          }}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
           </svg>
-          Imprimir
+          Imprimir PDF
         </button>
         <button onClick={() => navigate(-1)}
           className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
@@ -290,10 +300,16 @@ const LicenciaImprimirPage = () => {
               </div>
 
               {/* GIRO O ACTIVIDAD */}
-              <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-end' }}>
+              <div style={{ display: 'flex', gap: '2mm', alignItems: 'flex-start' }}>
                 <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', width: '34mm', flexShrink: 0 }}>GIRO O ACTIVIDAD</span>
                 <span style={{ whiteSpace: 'nowrap' }}>:</span>
-                <span style={{ fontWeight: 'bold', flex: 1, borderBottom: '1px solid #4a2000', minWidth: 0 }}>{licencia.actividad || '-'}</span>
+                <span style={{
+                  fontWeight: 'bold',
+                  flex: 1,
+                  minWidth: 0,
+                  backgroundImage: 'repeating-linear-gradient(to bottom, transparent, transparent calc(1.8em - 1px), #4a2000 calc(1.8em - 1px), #4a2000 1.8em)',
+                  backgroundSize: '100% 1.8em',
+                }}>{licencia.actividad || '-'}</span>
               </div>
 
               {/* NOMBRE COMERCIAL */}

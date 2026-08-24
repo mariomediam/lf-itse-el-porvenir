@@ -66,4 +66,9 @@ export const licenciasApi = {
 
   consultar: (params) =>
     api.get('/api/lf-itse/licencias-funcionamiento/consulta/', { params }),
+
+  descargarPdf: (licenciaId) =>
+    api.get(`/api/lf-itse/licencias-funcionamiento/${licenciaId}/pdf/`, {
+      responseType: 'blob',
+    }),
 }
