@@ -4267,21 +4267,20 @@ class LicenciaFuncionamientoPdfView(APIView):
         c.rect(box_x, box_y, text_w + box_pad_x * 2, box_h)
         c.drawString(box_x + box_pad_x, box_y + box_pad_y, num_lic)
 
-        # ── Expediente (top right) ──
+        # ── Expediente (left-aligned with vencimiento; Y independent) ──
         c.setFont('Helvetica-Bold', fs_exp)
-        exp_x = page_w - pad_side - 24 * mm
-        exp_y = page_h - pad_top - 14 * mm - fs_exp
-        c.drawRightString(exp_x, exp_y, num_exp)
-
-        # ── Vencimiento (below expediente) ──
-        # venc_x = page_w - pad_side - 23 * mm
         venc_x = page_w - pad_side - 19 * mm
-        venc_y = exp_y - 3 * mm - fs_exp
-        c.setFont('Helvetica-Bold', fs_exp)
+        venc_w = c.stringWidth(vencimiento, 'Helvetica-Bold', fs_exp)
+        exp_x = venc_x - venc_w
+        exp_y = page_h - pad_top - 8 * mm - fs_exp
+        c.drawString(exp_x, exp_y, num_exp)
+
+        # ── Vencimiento (position independent of expediente) ──
+        venc_y = page_h - pad_top - 17 * mm - 2 * fs_exp
         c.drawRightString(venc_x, venc_y, vencimiento)
 
         # ── Title ──
-        title_y = box_y - 2 * mm - fs_title
+        title_y = box_y - 7 * mm - fs_title
         c.setFont('Helvetica-Bold', fs_title)
         c.drawCentredString(page_w / 2, title_y, 'CERTIFICADO DE LICENCIA DE FUNCIONAMIENTO')
 
