@@ -4082,8 +4082,8 @@ class LicenciaFuncionamientoPdfView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    PAGE_W_MM = 240
-    PAGE_H_MM = 160
+    PAGE_W_MM = 239
+    PAGE_H_MM = 156
 
     MESES = [
         'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -4183,6 +4183,7 @@ class LicenciaFuncionamientoPdfView(APIView):
         page_h = self.PAGE_H_MM * mm
         buf = BytesIO()
         c = pdf_canvas.Canvas(buf, pagesize=(page_w, page_h))
+        c.translate(13 * mm, 0)
 
         color_brown = (74 / 255, 32 / 255, 0)
 
@@ -4268,12 +4269,13 @@ class LicenciaFuncionamientoPdfView(APIView):
 
         # ── Expediente (top right) ──
         c.setFont('Helvetica-Bold', fs_exp)
-        exp_x = page_w - pad_side - 33 * mm
+        exp_x = page_w - pad_side - 24 * mm
         exp_y = page_h - pad_top - 14 * mm - fs_exp
         c.drawRightString(exp_x, exp_y, num_exp)
 
         # ── Vencimiento (below expediente) ──
-        venc_x = page_w - pad_side - 23 * mm
+        # venc_x = page_w - pad_side - 23 * mm
+        venc_x = page_w - pad_side - 19 * mm
         venc_y = exp_y - 3 * mm - fs_exp
         c.setFont('Helvetica-Bold', fs_exp)
         c.drawRightString(venc_x, venc_y, vencimiento)
