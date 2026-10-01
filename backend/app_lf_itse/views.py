@@ -4326,7 +4326,7 @@ class LicenciaFuncionamientoPdfView(APIView):
             return y_pos - (total_lines * line_h)
 
         # ── License number box ──
-        box_x = pad_side + 52 * mm
+        box_x = pad_side + 52 * mm + 17 * mm
         box_y = page_h - pad_top - 18 * mm - px(20) - 2 * mm
         c.setFont('Helvetica-Bold', fs_numlic)
         text_w = c.stringWidth(num_lic, 'Helvetica-Bold', fs_numlic)
@@ -4349,22 +4349,23 @@ class LicenciaFuncionamientoPdfView(APIView):
         venc_y = page_h - pad_top - 17 * mm - 2 * fs_exp
         c.drawRightString(venc_x, venc_y, vencimiento)
 
-        # ── Title ──
+        # ── Title (4 mm toward the right edge) ──
+        title_x = page_w / 2 + 4 * mm
         title_y = box_y - 7 * mm - fs_title
         c.setFont('Helvetica-Bold', fs_title)
-        c.drawCentredString(page_w / 2, title_y, 'CERTIFICADO DE LICENCIA DE FUNCIONAMIENTO')
+        c.drawCentredString(title_x, title_y, 'CERTIFICADO DE LICENCIA DE FUNCIONAMIENTO')
 
         subtitle_y = title_y - 1 * mm - fs_subtitle
         c.setFont('Helvetica', fs_subtitle)
         c.drawCentredString(
-            page_w / 2, subtitle_y,
+            title_x, subtitle_y,
             u'Ley Org\u00e1nica de Municipalidades N\u00b0 27972, '
             u'Ley Marco de Licencia de Funcionamiento N\u00b0 28976.',
         )
 
-        # ── Fields (10 mm to the right of the header) ──
-        fields_x += 10 * mm
-        fields_right += 10 * mm
+        # ── Fields (14 mm to the right of the header) ──
+        fields_x += 14 * mm
+        fields_right += 14 * mm
         current_y = subtitle_y - 3 * mm - line_h
 
         # OTORGADO A
