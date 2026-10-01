@@ -4349,10 +4349,19 @@ class LicenciaFuncionamientoPdfView(APIView):
         venc_y = page_h - pad_top - 17 * mm - 2 * fs_exp
         c.drawRightString(venc_x, venc_y, vencimiento)
 
-        # ── Title (4 mm toward the right edge) ──
+        # ── Title (4 mm toward the right edge, Caladea Bold) ──
+        from pathlib import Path
+
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+
+        if 'Caladea-Bold' not in pdfmetrics.getRegisteredFontNames():
+            caladea_bold = Path(__file__).resolve().parent.parent / 'fonts' / 'Caladea-Bold.ttf'
+            pdfmetrics.registerFont(TTFont('Caladea-Bold', str(caladea_bold)))
+
         title_x = page_w / 2 + 4 * mm
         title_y = box_y - 7 * mm - fs_title
-        c.setFont('Helvetica-Bold', fs_title)
+        c.setFont('Caladea-Bold', fs_title)
         c.drawCentredString(title_x, title_y, 'CERTIFICADO DE LICENCIA DE FUNCIONAMIENTO')
 
         subtitle_y = title_y - 1 * mm - fs_subtitle
