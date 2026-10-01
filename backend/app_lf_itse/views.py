@@ -4278,7 +4278,7 @@ class LicenciaFuncionamientoPdfView(APIView):
         # Font sizes matching CSS px → pt
         fs_numlic = px(20)       # 20px
         fs_exp = px(18)          # 18px
-        fs_title = px(18)        # 18px
+        fs_title = px(20)        # 18px
         fs_subtitle = px(8.5)    # 8.5px
         fs_field = px(12)        # 12px
         fs_horario_label = px(11.5)
