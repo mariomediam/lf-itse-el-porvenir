@@ -4076,8 +4076,7 @@ class LicenciaFuncionamientoPdfView(APIView):
 
     Genera y retorna un PDF del certificado de licencia de funcionamiento
     en A4 horizontal (297 mm × 210 mm). El área del certificado
-    (239 mm × 156 mm) va centrada, con una cuadrícula de calibración
-    para ajustar la impresión.
+    (239 mm × 156 mm) va centrada en la hoja.
 
     Requiere autenticación JWT.
     """
@@ -4193,65 +4192,6 @@ class LicenciaFuncionamientoPdfView(APIView):
         buf = BytesIO()
         c = pdf_canvas.Canvas(buf, pagesize=(a4_w, a4_h))
 
-        def draw_calibration_grid():
-            """Draw a 10 mm grid and the certificate bounds for print alignment."""
-            c.saveState()
-            for x_mm in range(0, self.A4_W_MM + 1, 10):
-                x = x_mm * mm
-                major = x_mm % 50 == 0
-                c.setStrokeColorRGB(0.45, 0.45, 0.45) if major else c.setStrokeColorRGB(0.78, 0.78, 0.78)
-                c.setLineWidth(0.7 if major else 0.3)
-                c.line(x, 0, x, a4_h)
-                if x_mm == 0:
-                    continue
-                c.setFillColorRGB(0.15, 0.15, 0.15)
-                c.setFont('Helvetica-Bold' if major else 'Helvetica', 6)
-                c.drawCentredString(x, 4 * mm, str(x_mm))
-
-            for y_mm in range(0, self.A4_H_MM + 1, 10):
-                y = y_mm * mm
-                major = y_mm % 50 == 0
-                c.setStrokeColorRGB(0.45, 0.45, 0.45) if major else c.setStrokeColorRGB(0.78, 0.78, 0.78)
-                c.setLineWidth(0.7 if major else 0.3)
-                c.line(0, y, a4_w, y)
-                if y_mm == 0 or y_mm >= 190:
-                    continue
-                c.setFillColorRGB(0.15, 0.15, 0.15)
-                c.setFont('Helvetica-Bold' if major else 'Helvetica', 6)
-                c.drawString(2 * mm, y + 0.6 * mm, str(y_mm))
-                c.drawRightString(a4_w - 2 * mm, y + 0.6 * mm, str(y_mm))
-
-            c.setStrokeColorRGB(0.8, 0.1, 0.1)
-            c.setLineWidth(1.2)
-            c.rect(form_x, form_y, page_w, page_h, stroke=1, fill=0)
-
-            caption = (
-                f'\u00c1rea del certificado: {self.PAGE_W_MM} \u00d7 {self.PAGE_H_MM} mm'
-                f'   |   esquina inferior izquierda: X={form_x / mm:.0f} mm, Y={form_y / mm:.0f} mm'
-            )
-            c.setFillColorRGB(1, 1, 1)
-            c.rect(form_x, form_y + page_h + 0.5 * mm, 165 * mm, 4 * mm, stroke=0, fill=1)
-            c.setFillColorRGB(0.8, 0.1, 0.1)
-            c.setFont('Helvetica', 7)
-            c.drawString(form_x + 1 * mm, form_y + page_h + 1.4 * mm, caption)
-
-            c.setFillColorRGB(1, 1, 1)
-            c.rect(3 * mm, a4_h - 14 * mm, a4_w - 6 * mm, 12 * mm, stroke=0, fill=1)
-            c.setFillColorRGB(0.15, 0.15, 0.15)
-            c.setFont('Helvetica', 8)
-            c.drawString(
-                5 * mm, a4_h - 6 * mm,
-                'Calibraci\u00f3n A4 horizontal. Imprimir al 100 % (tama\u00f1o real), '
-                'sin ajustar a la p\u00e1gina y sin encabezado ni pie.',
-            )
-            c.drawString(
-                5 * mm, a4_h - 10 * mm,
-                'Cuadr\u00edcula cada 10 mm. X = mm desde el borde izquierdo. '
-                'Y = mm desde el borde inferior. El rect\u00e1ngulo rojo es el certificado.',
-            )
-            c.restoreState()
-
-        draw_calibration_grid()
         # 13 mm right and 8 mm down from the centered certificate area.
         c.translate(form_x + 13 * mm, form_y - 8 * mm)
 
