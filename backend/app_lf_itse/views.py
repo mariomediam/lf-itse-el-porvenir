@@ -4158,7 +4158,8 @@ class LicenciaFuncionamientoPdfView(APIView):
         titular_nombre = (lic.get('titular_nombre') or '').upper()
         titular_ruc = lic.get('titular_ruc') or ''
         nombre_comercial = (lic.get('nombre_comercial') or '').upper()
-        direccion = (lic.get('direccion') or '').upper()
+        # en direccion agregar , "DISTRITO EL PORVENIR"
+        direccion = f'{lic.get('direccion') or ''}, DISTRITO EL PORVENIR'
         actividad = lic.get('actividad') or '-'
         area_val = lic.get('area')
         area_texto = f"{int(area_val)} m\u00b2" if area_val is not None else '-'
@@ -4228,20 +4229,41 @@ class LicenciaFuncionamientoPdfView(APIView):
         line_h = px(12) * 1.8    # 12px * 1.8 line-height
 
         def wrap_text(text, font_name, font_size, max_width):
-            """Split text into lines that fit within max_width."""
-            words = str(text).split()
+            """Split text into lines that fit within max_width, keeping spaces between words."""
+            raw = str(text)
+            tokens = []
+            buf = ''
+            in_space = None
+            for ch in raw:
+                is_space = ch.isspace()
+                if in_space is None or is_space == in_space:
+                    buf += ch
+                    in_space = is_space
+                else:
+                    tokens.append(buf)
+                    buf = ch
+                    in_space = is_space
+            if buf:
+                tokens.append(buf)
+
             lines = []
             current = ''
-            for word in words:
-                test = f'{current} {word}'.strip()
+            for token in tokens:
+                if token.isspace() and not current:
+                    continue
+                test = current + token
                 if c.stringWidth(test, font_name, font_size) <= max_width:
                     current = test
+                elif token.isspace():
+                    if current.strip():
+                        lines.append(current.rstrip())
+                    current = ''
                 else:
-                    if current:
-                        lines.append(current)
-                    current = word
-            if current:
-                lines.append(current)
+                    if current.strip():
+                        lines.append(current.rstrip())
+                    current = token
+            if current.strip():
+                lines.append(current.rstrip())
             return lines or ['']
 
         def draw_field(label, value, y_pos, label_font_size=fs_field, right_limit=None):
@@ -4318,11 +4340,12 @@ class LicenciaFuncionamientoPdfView(APIView):
         current_y = subtitle_y - 3 * mm - line_h
 
         # OTORGADO A
+        gap = '    '
         otorgado_value = titular_nombre
         if doc_titular_texto:
-            otorgado_value += f'    {doc_titular_texto}'
+            otorgado_value += f'{gap}{doc_titular_texto}'
         if titular_ruc:
-            otorgado_value += f'    RUC N\u00b0{titular_ruc}'
+            otorgado_value += f'{gap}RUC N\u00b0{titular_ruc}'
         current_y = draw_field('OTORGADO A', otorgado_value, current_y)
 
         # GIRO O ACTIVIDAD
