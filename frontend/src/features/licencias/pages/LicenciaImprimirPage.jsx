@@ -368,9 +368,13 @@ const LicenciaImprimirPage = () => {
                     <>
                       <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', lineHeight: '1.8' }}>MEDIDAS:</span>
                       <div style={{ flex: 1, marginLeft: '2mm', minWidth: 0 }}>
-                        {(licencia.medidas || '-').split(';').map((medida, idx) => (
+                        {(licencia.medidas || '')
+                          .split(';')
+                          .map((medida) => medida.trim())
+                          .filter(Boolean)
+                          .map((medida, idx) => (
                           <div key={idx} style={{ fontWeight: 'bold', borderBottom: '1px solid #4a2000', textAlign: 'center', lineHeight: '1.8' }}>
-                            {medida.trim()}
+                            {medida}
                           </div>
                         ))}
                       </div>

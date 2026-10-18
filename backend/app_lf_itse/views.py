@@ -4390,10 +4390,15 @@ class LicenciaFuncionamientoPdfView(APIView):
                 c.drawString(medidas_x, row_y, 'MEDIDAS:')
                 medidas_val_x = medidas_x + c.stringWidth('MEDIDAS:', 'Helvetica-Bold', fs_field) + 2 * mm
                 c.setLineWidth(0.5)
-                for i, medida in enumerate(medidas.split(';')):
+                medida_items = [m.strip() for m in medidas.split(';') if m.strip()]
+                for i, medida in enumerate(medida_items):
                     y_m = row_y - (i * line_h)
-                    c.drawString(medidas_val_x, y_m, medida.strip())
+                    c.drawString(medidas_val_x, y_m, medida)
                     c.line(medidas_val_x, y_m - 1, fields_right, y_m - 1)
+                # Extra rows grow downward; keep horario, glosa and the date below them.
+                medidas_bottom = row_y - (len(medida_items) * line_h)
+                if medidas_bottom < current_y:
+                    current_y = medidas_bottom
 
         # HORARIO DE ATENCI\u00d3N (optional)
         if hora_desde and hora_hasta:
