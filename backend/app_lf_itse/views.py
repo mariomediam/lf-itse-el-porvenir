@@ -4301,14 +4301,14 @@ class LicenciaFuncionamientoPdfView(APIView):
 
         # ── Expediente (left-aligned with vencimiento; Y independent) ──
         c.setFont('Helvetica-Bold', fs_exp)
-        venc_x = page_w - pad_side - 19 * mm + 5 * mm
+        venc_x = page_w - pad_side - 19 * mm + 5 * mm + 8 * mm
         venc_w = c.stringWidth(vencimiento, 'Helvetica-Bold', fs_exp)
         exp_x = venc_x - venc_w
-        exp_y = page_h - pad_top - 8 * mm - fs_exp
+        exp_y = page_h - pad_top - 8 * mm - fs_exp + 2 * mm
         c.drawString(exp_x, exp_y, num_exp)
 
         # ── Vencimiento (position independent of expediente) ──
-        venc_y = page_h - pad_top - 17 * mm - 2 * fs_exp
+        venc_y = page_h - pad_top - 17 * mm - 2 * fs_exp + 2 * mm
         c.drawRightString(venc_x, venc_y, vencimiento)
 
         # ── Title (4 mm toward the right edge, Caladea Bold) ──
